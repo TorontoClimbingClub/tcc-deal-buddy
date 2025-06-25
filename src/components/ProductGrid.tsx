@@ -7,13 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, AlertCircle, Filter, Search, TrendingUp, ShoppingBag, Star, DollarSign } from 'lucide-react';
-import { useAvantLink } from '../hooks/useAvantLink';
-import { avantLinkService } from '../services/avantlink';
+import { useProducts } from '../hooks/useProducts';
 
 const ProductGrid: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedMerchant, setSelectedMerchant] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState('all');
   const [priceRange, setPriceRange] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,32 +20,26 @@ const ProductGrid: React.FC = () => {
   const [sortBy, setSortBy] = useState<'price' | 'discount' | 'name'>('discount');
   const [filterOpen, setFilterOpen] = useState(false);
   
-  // Hardcoded merchant IDs for the two tracked merchants
-  const TRACKED_MERCHANTS = ['31349', '18557']; // Climb On Equipment (31349) and Mountain Equipment Coop (18557)
+  // Products now loaded from Supabase database (all merchants)
 
   const {
     products,
     loading,
     error,
+    totalProducts,
+    getCurrentDeals,
+    getProductsByMerchant,
     searchProducts,
-    getPopularProducts,
-    getSaleProducts,
-    getSaleProductsByMerchants,
-    isConfigured
-  } = useAvantLink();
+    refreshProducts
+  } = useProducts();
 
-  // Load newest sale items on mount if configured
-  useEffect(() => {
-    if (isConfigured && products.length === 0) {
-      getSaleProductsByMerchants(TRACKED_MERCHANTS, 'sale');
-    }
-  }, [isConfigured, products.length, getSaleProductsByMerchants]);
+  // Products automatically load from database on mount via useProducts hook
 
-  // Extract unique categories and merchants from actual products
+  // Extract unique categories and brands from actual products
   const categories = useMemo(() => 
     [...new Set(products.map(p => p.category))], [products]);
-  const merchants = useMemo(() => 
-    [...new Set(products.map(p => p.merchant))], [products]);
+  const brands = useMemo(() => 
+    [...new Set(products.filter(p => p.brand).map(p => p.brand!))].sort(), [products]);
 
   // Dashboard statistics
   const dashboardStats = useMemo(() => {
@@ -93,8 +86,8 @@ const ProductGrid: React.FC = () => {
         return false;
       }
 
-      // Merchant filter
-      if (selectedMerchant !== 'all' && product.merchant !== selectedMerchant) {
+      // Brand filter
+      if (selectedBrand !== 'all' && product.brand !== selectedBrand) {
         return false;
       }
 
@@ -127,7 +120,7 @@ const ProductGrid: React.FC = () => {
     });
 
     return filtered;
-  }, [products, searchTerm, selectedCategory, selectedMerchant, priceRange, sortBy]);
+  }, [products, searchTerm, selectedCategory, selectedBrand, priceRange, sortBy]);
 
   const handleViewDetails = (product: Product) => {
     setSelectedProduct(product);
@@ -142,39 +135,30 @@ const ProductGrid: React.FC = () => {
   const handleSearch = async () => {
     if (searchTerm.trim()) {
       setLastSearchTerm(searchTerm);
-      await searchProducts({
-        searchTerm: searchTerm.trim(),
-        merchantIds: TRACKED_MERCHANTS,
-        category: selectedCategory !== 'all' ? selectedCategory : undefined,
-        resultsPerPage: 20
-      });
+      await searchProducts(searchTerm.trim());
     } else {
-      getSaleProductsByMerchants(TRACKED_MERCHANTS);
+      await getCurrentDeals();
     }
   };
 
-  const handleQuickSearch = (term: string) => {
+  const handleQuickSearch = async (term: string) => {
     setSearchTerm(term);
     setLastSearchTerm(term);
-    searchProducts({
-      searchTerm: term,
-      merchantIds: TRACKED_MERCHANTS,
-      resultsPerPage: 20
-    });
+    await searchProducts(term);
   };
 
-  const handleRefresh = () => {
-    getSaleProductsByMerchants(TRACKED_MERCHANTS, lastSearchTerm || 'sale');
+  const handleRefresh = async () => {
+    if (lastSearchTerm) {
+      await searchProducts(lastSearchTerm);
+    } else {
+      await refreshProducts();
+    }
   };
 
   const handleSearchDeals = async () => {
-    await getSaleProductsByMerchants(TRACKED_MERCHANTS, searchTerm || 'sale');
-    setLastSearchTerm(searchTerm || 'sale');
-  };
-
-  const handleTestAPI = async () => {
-    console.log('🧪 Manual API test initiated...');
-    await avantLinkService.testConnection();
+    const term = searchTerm.trim() || 'gear';
+    await searchProducts(term);
+    setLastSearchTerm(term);
   };
 
   return (
@@ -209,7 +193,6 @@ const ProductGrid: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={!isConfigured}
                   />
                 </div>
               </div>
@@ -265,15 +248,15 @@ const ProductGrid: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Merchant</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
                   <select 
-                    value={selectedMerchant}
-                    onChange={(e) => setSelectedMerchant(e.target.value)}
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="all">All Merchants</option>
-                    {merchants.map(merchant => (
-                      <option key={merchant} value={merchant}>{merchant}</option>
+                    <option value="all">All Brands</option>
+                    {brands.map(brand => (
+                      <option key={brand} value={brand}>{brand}</option>
                     ))}
                   </select>
                 </div>
@@ -425,7 +408,7 @@ const ProductGrid: React.FC = () => {
                     className="w-full justify-start"
                     onClick={() => {
                       setSearchTerm('clearance');
-                      getSaleProductsByMerchants(TRACKED_MERCHANTS, 'clearance');
+                      handleQuickSearch('clearance');
                     }}
                   >
                     Clearance Items
@@ -435,7 +418,7 @@ const ProductGrid: React.FC = () => {
                     className="w-full justify-start"
                     onClick={() => {
                       setSearchTerm('climbing shoes');
-                      getSaleProductsByMerchants(TRACKED_MERCHANTS, 'climbing shoes');
+                      handleQuickSearch('climbing shoes');
                     }}
                   >
                     Climbing Shoes

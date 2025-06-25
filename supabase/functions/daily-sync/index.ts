@@ -40,7 +40,7 @@ interface TransformedProduct {
   subcategory?: string
 }
 
-const TARGET_MERCHANTS = [31349, 18557] // Climb On Equipment, Mountain Equipment Coop
+const TARGET_MERCHANTS = [9272] // MEC Mountain Equipment Company Ltd
 
 serve(async (req) => {
   // Handle CORS preflight requests

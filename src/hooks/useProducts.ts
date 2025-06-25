@@ -44,18 +44,17 @@ export function useProducts(): UseProductsResult {
 
   const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => ({
     id: dbProduct.sku, // Use SKU as ID for compatibility
-    title: dbProduct.name,
+    name: dbProduct.name,
+    description: dbProduct.description || '',
     price: dbProduct.sale_price || 0,
     originalPrice: dbProduct.retail_price || undefined,
-    discountPercentage: dbProduct.discount_percent || undefined,
-    image: dbProduct.image_url || '/placeholder.svg',
-    link: dbProduct.buy_url || '#',
-    description: dbProduct.description || '',
+    imageUrl: dbProduct.image_url || '/placeholder.svg',
+    affiliateUrl: dbProduct.buy_url || '#',
+    merchant: dbProduct.merchant_name,
     brand: dbProduct.brand_name || undefined,
-    category: dbProduct.category || undefined,
-    merchantName: dbProduct.merchant_name,
-    merchantId: dbProduct.merchant_id.toString(),
-    sku: dbProduct.sku
+    category: dbProduct.category || 'General',
+    rating: undefined, // Not available in database
+    discount: dbProduct.discount_percent || undefined
   });
 
   const handleDatabaseError = useCallback((err: any) => {
@@ -73,8 +72,7 @@ export function useProducts(): UseProductsResult {
       const { data, error: queryError } = await supabase
         .from('current_deals')
         .select('*')
-        .order('calculated_discount_percent', { ascending: false })
-        .limit(100);
+        .order('calculated_discount_percent', { ascending: false });
 
       if (queryError) {
         throw queryError;

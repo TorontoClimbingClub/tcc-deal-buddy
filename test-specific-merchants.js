@@ -3,9 +3,9 @@ import avantLinkService from './src/services/avantlink.ts';
 async function testSpecificMerchants() {
   console.log('🔍 Testing specific merchant searches...\n');
   
-  // Common outdoor/climbing merchant IDs (you may need to update these)
+  // Mountain Equipment Coop (MEC) merchant testing
   const merchantTests = [
-    { name: 'Climb On Equipment', searchTerm: 'climbing gear', merchantId: null },
+    { name: 'MEC Mountain Equipment Coop', searchTerm: 'climbing gear', merchantId: '9272' },
     { name: 'General climbing search', searchTerm: 'climbing equipment sale', merchantId: null },
     { name: 'All merchants - climbing', searchTerm: 'climbing', merchantId: null },
     { name: 'All merchants - outdoor', searchTerm: 'outdoor gear sale', merchantId: null },

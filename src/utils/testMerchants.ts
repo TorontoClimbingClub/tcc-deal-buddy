@@ -5,7 +5,7 @@ export async function testMerchantAvailability() {
   
   const testSearches = [
     { term: 'climbing equipment', onSale: false },
-    { term: 'climb on equipment', onSale: false },
+    { term: 'MEC outdoor gear', onSale: false },
     { term: 'outdoor gear', onSale: false },
     { term: 'camping', onSale: false },
     { term: 'climbing', onSale: true },

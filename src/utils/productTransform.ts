@@ -4,51 +4,127 @@ import { AvantLinkProduct } from '../services/avantlink';
 import { Product } from '../components/ProductCard';
 
 /**
+ * Sanitize and validate product data from third-party API
+ */
+function sanitizeProductData(data: any): any {
+  if (!data || typeof data !== 'object') return {};
+  
+  const sanitized: any = {};
+  
+  // Only copy known safe fields with validation
+  const safeFields = [
+    'Product Id', 'lngProductId',
+    'Product Name', 'strProductName', 
+    'Retail Price', 'dblProductPrice',
+    'Sale Price', 'dblProductSalePrice',
+    'Price Discount Percent', 'dblProductOnSalePercent',
+    'Short Description', 'txtShortDescription',
+    'Abbreviated Description', 'txtAbbreviatedDescription',
+    'Description', 'txtLongDescription',
+    'Medium Image', 'strMediumImage',
+    'Large Image', 'strLargeImage',
+    'Thumbnail Image', 'strThumbnailImage',
+    'Buy URL', 'strBuyURL',
+    'Product URL', 'strProductURL',
+    'Merchant Name', 'strMerchantName',
+    'Category Name', 'strCategoryName',
+    'Department Name', 'strDepartmentName',
+    'Product SKU', 'strProductSKU'
+  ];
+  
+  safeFields.forEach(field => {
+    if (data[field] !== undefined) {
+      const value = data[field];
+      if (typeof value === 'string') {
+        // Sanitize string values
+        sanitized[field] = value.replace(/[<>\"']/g, '').trim().slice(0, 1000);
+      } else if (typeof value === 'number' || !isNaN(Number(value))) {
+        // Validate numeric values
+        const num = Number(value);
+        if (num >= 0 && num <= 999999) {
+          sanitized[field] = value;
+        }
+      }
+    }
+  });
+  
+  return sanitized;
+}
+
+/**
  * Transform AvantLink product data to our internal Product format
  */
 export function transformAvantLinkProduct(avantLinkProduct: any): Product {
+  // Sanitize input data first
+  const sanitized = sanitizeProductData(avantLinkProduct);
+  
   // Parse prices safely - handle both old and new field formats
-  const retailPrice = parseFloat(avantLinkProduct['Retail Price'] || avantLinkProduct.dblProductPrice) || 0;
-  const salePrice = parseFloat(avantLinkProduct['Sale Price'] || avantLinkProduct.dblProductSalePrice) || retailPrice;
-  const discountPercent = parseFloat(avantLinkProduct['Price Discount Percent'] || avantLinkProduct.dblProductOnSalePercent) || 0;
+  const retailPrice = parseFloat(sanitized['Retail Price'] || sanitized.dblProductPrice) || 0;
+  const salePrice = parseFloat(sanitized['Sale Price'] || sanitized.dblProductSalePrice) || retailPrice;
+  const discountPercent = parseFloat(sanitized['Price Discount Percent'] || sanitized.dblProductOnSalePercent) || 0;
 
   // Determine the current price (use sale price if available and lower than retail)
   const currentPrice = salePrice > 0 && salePrice < retailPrice ? salePrice : retailPrice;
   const originalPrice = salePrice > 0 && salePrice < retailPrice ? retailPrice : undefined;
 
-  // Choose the best description available
-  const description = avantLinkProduct['Short Description'] || 
-                     avantLinkProduct.txtShortDescription ||
-                     avantLinkProduct['Abbreviated Description'] || 
-                     avantLinkProduct.txtAbbreviatedDescription ||
-                     avantLinkProduct['Description'] || 
-                     avantLinkProduct.txtLongDescription ||
+  // Choose the best description available from sanitized data
+  const description = sanitized['Short Description'] || 
+                     sanitized.txtShortDescription ||
+                     sanitized['Abbreviated Description'] || 
+                     sanitized.txtAbbreviatedDescription ||
+                     sanitized['Description'] || 
+                     sanitized.txtLongDescription ||
                      'No description available';
 
-  // Choose the best image available
-  const imageUrl = avantLinkProduct['Medium Image'] || 
-                   avantLinkProduct.strMediumImage ||
-                   avantLinkProduct['Large Image'] || 
-                   avantLinkProduct.strLargeImage ||
-                   avantLinkProduct['Thumbnail Image'] || 
-                   avantLinkProduct.strThumbnailImage ||
-                   '/placeholder-product.svg';
+  // Choose the best image available from sanitized data and validate URL
+  let imageUrl = sanitized['Medium Image'] || 
+                 sanitized.strMediumImage ||
+                 sanitized['Large Image'] || 
+                 sanitized.strLargeImage ||
+                 sanitized['Thumbnail Image'] || 
+                 sanitized.strThumbnailImage ||
+                 '/placeholder-product.svg';
 
-  // Generate a clean product ID
-  const productId = avantLinkProduct['Product Id'] || 
-                    avantLinkProduct.lngProductId ||
-                    `${avantLinkProduct['Merchant Name'] || avantLinkProduct.strMerchantName}-${avantLinkProduct['Product SKU'] || avantLinkProduct.strProductSKU}`.replace(/\s+/g, '-');
+  // Validate image URL for security
+  if (imageUrl && imageUrl !== '/placeholder-product.svg') {
+    try {
+      const url = new URL(imageUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        imageUrl = '/placeholder-product.svg';
+      }
+    } catch {
+      imageUrl = '/placeholder-product.svg';
+    }
+  }
+
+  // Generate a clean product ID from sanitized data
+  const productId = sanitized['Product Id'] || 
+                    sanitized.lngProductId ||
+                    `${sanitized['Merchant Name'] || sanitized.strMerchantName}-${sanitized['Product SKU'] || sanitized.strProductSKU}`.replace(/\s+/g, '-');
+
+  // Validate affiliate URL
+  let affiliateUrl = sanitized['Buy URL'] || sanitized.strBuyURL || sanitized['Product URL'] || sanitized.strProductURL || '#';
+  if (affiliateUrl !== '#') {
+    try {
+      const url = new URL(affiliateUrl);
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        affiliateUrl = '#';
+      }
+    } catch {
+      affiliateUrl = '#';
+    }
+  }
 
   return {
     id: productId.toString(),
-    name: avantLinkProduct['Product Name'] || avantLinkProduct.strProductName || 'Unnamed Product',
+    name: sanitized['Product Name'] || sanitized.strProductName || 'Unnamed Product',
     description: cleanDescription(description),
     price: currentPrice,
     originalPrice,
     imageUrl,
-    affiliateUrl: avantLinkProduct['Buy URL'] || avantLinkProduct.strBuyURL || avantLinkProduct['Product URL'] || avantLinkProduct.strProductURL || '#',
-    merchant: avantLinkProduct['Merchant Name'] || avantLinkProduct.strMerchantName || 'Unknown Merchant',
-    category: avantLinkProduct['Category Name'] || avantLinkProduct.strCategoryName || avantLinkProduct['Department Name'] || avantLinkProduct.strDepartmentName || 'General',
+    affiliateUrl,
+    merchant: sanitized['Merchant Name'] || sanitized.strMerchantName || 'Unknown Merchant',
+    category: sanitized['Category Name'] || sanitized.strCategoryName || sanitized['Department Name'] || sanitized.strDepartmentName || 'General',
     discount: discountPercent > 0 ? Math.round(discountPercent) : undefined,
     rating: undefined // AvantLink doesn't provide ratings, could be enhanced later
   };
@@ -65,24 +141,51 @@ export function transformAvantLinkProducts(avantLinkProducts: AvantLinkProduct[]
 
 /**
  * Clean up product descriptions (remove HTML, truncate, etc.)
+ * Enhanced with security measures against XSS and malicious content
  */
 function cleanDescription(description: string): string {
-  if (!description) return 'No description available';
+  if (!description || typeof description !== 'string') return 'No description available';
   
-  // Remove HTML tags
-  const withoutHtml = description.replace(/<[^>]*>/g, '');
+  // Remove potential script tags and dangerous content
+  let cleaned = description
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '');
   
-  // Decode HTML entities
-  const withoutEntities = withoutHtml
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, ' ');
+  // Remove all HTML tags
+  cleaned = cleaned.replace(/<[^>]*>/g, '');
   
-  // Trim and limit length
-  const cleaned = withoutEntities.trim();
+  // Decode HTML entities safely
+  const entityMap: { [key: string]: string } = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&nbsp;': ' ',
+    '&#x27;': "'",
+    '&#x2F;': '/',
+    '&#x60;': '`',
+    '&#x3D;': '='
+  };
+  
+  cleaned = cleaned.replace(/&[#\w]+;/g, (entity) => {
+    return entityMap[entity] || '';
+  });
+  
+  // Remove potential XSS patterns
+  cleaned = cleaned
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+    .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, ''); // Keep only printable characters
+  
+  // Trim whitespace
+  cleaned = cleaned.trim();
+  
+  // Validate length and content
+  if (cleaned.length === 0) {
+    return 'No description available';
+  }
   
   // Truncate to reasonable length for cards
   if (cleaned.length > 150) {

@@ -9,6 +9,7 @@ export interface Product {
   imageUrl: string;
   affiliateUrl: string;
   merchant: string;
+  brand?: string;
   category: string;
   rating?: number;
   discount?: number;

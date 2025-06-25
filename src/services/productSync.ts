@@ -460,8 +460,7 @@ export async function dailyMultiMerchantSync(): Promise<{
   
   // Define your merchants here
   const merchants = [
-    { name: 'MEC', ids: ['18557'] },  // MEC Mountain Equipment Company
-    { name: 'Climb On Equipment', ids: ['YOUR_CLIMB_ON_ID'] }  // Add the correct ID
+    { name: 'MEC', ids: ['9272'] }  // MEC Mountain Equipment Company
   ];
   
   let totalSaved = 0;

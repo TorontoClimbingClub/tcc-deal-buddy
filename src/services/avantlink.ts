@@ -68,6 +68,45 @@ export interface ProductSearchParams {
   resultsPerPage?: number;
 }
 
+// Input validation utilities
+const validateSearchParams = (params: ProductSearchParams): ProductSearchParams => {
+  const validated = { ...params };
+
+  // Validate and sanitize search term
+  if (!validated.searchTerm || typeof validated.searchTerm !== 'string') {
+    throw new Error('Search term is required and must be a string');
+  }
+  validated.searchTerm = validated.searchTerm.trim().slice(0, 100); // Limit to 100 chars
+
+  // Validate price ranges
+  if (validated.priceMin !== undefined) {
+    validated.priceMin = Math.max(0, Number(validated.priceMin) || 0);
+  }
+  if (validated.priceMax !== undefined) {
+    validated.priceMax = Math.max(0, Number(validated.priceMax) || 10000);
+    if (validated.priceMin && validated.priceMax < validated.priceMin) {
+      validated.priceMax = validated.priceMin;
+    }
+  }
+
+  // Validate pagination
+  if (validated.page !== undefined) {
+    validated.page = Math.max(1, Math.min(100, Number(validated.page) || 1)); // Max 100 pages
+  }
+  if (validated.resultsPerPage !== undefined) {
+    validated.resultsPerPage = Math.max(1, Math.min(100, Number(validated.resultsPerPage) || 20)); // Max 100 results per page
+  }
+
+  // Validate merchant IDs
+  if (validated.merchantIds) {
+    validated.merchantIds = validated.merchantIds
+      .filter(id => typeof id === 'string' && id.trim().length > 0)
+      .slice(0, 10); // Max 10 merchant IDs
+  }
+
+  return validated;
+};
+
 class AvantLinkService {
   private baseUrl = 'https://www.avantlink.com/api.php';
   private affiliateId: string;
@@ -94,41 +133,44 @@ class AvantLinkService {
       throw new Error('AvantLink API credentials not configured');
     }
 
+    // Validate input parameters
+    const validatedParams = validateSearchParams(params);
+
     const searchParams = new URLSearchParams({
       module: 'ProductSearch',
       affiliate_id: this.affiliateId,
       auth_key: this.apiKey,
       website_id: this.websiteId,
-      search_term: params.searchTerm,
+      search_term: validatedParams.searchTerm,
       output: 'json',
-      search_results_count: (params.resultsPerPage || 20).toString(),
-      search_results_base: (((params.page || 1) - 1) * (params.resultsPerPage || 20)).toString(),
+      search_results_count: (validatedParams.resultsPerPage || 20).toString(),
+      search_results_base: (((validatedParams.page || 1) - 1) * (validatedParams.resultsPerPage || 20)).toString(),
     });
 
     // Add optional search parameters
-    if (params.category && params.category !== 'all') {
-      searchParams.append('search_category', params.category);
+    if (validatedParams.category && validatedParams.category !== 'all') {
+      searchParams.append('search_category', validatedParams.category);
     }
 
     // Add merchant ID filtering if specified
-    if (params.merchantIds && params.merchantIds.length > 0) {
-      searchParams.append('merchant_ids', params.merchantIds.join(','));
+    if (validatedParams.merchantIds && validatedParams.merchantIds.length > 0) {
+      searchParams.append('merchant_ids', validatedParams.merchantIds.join(','));
     }
 
-    if (params.priceMin) {
-      searchParams.append('search_price_minimum', params.priceMin.toString());
+    if (validatedParams.priceMin) {
+      searchParams.append('search_price_minimum', validatedParams.priceMin.toString());
     }
 
-    if (params.priceMax) {
-      searchParams.append('search_price_maximum', params.priceMax.toString());
+    if (validatedParams.priceMax) {
+      searchParams.append('search_price_maximum', validatedParams.priceMax.toString());
     }
 
-    if (params.onSaleOnly) {
+    if (validatedParams.onSaleOnly) {
       searchParams.append('search_on_sale_only', '1');
     }
 
-    if (params.sortBy && params.sortOrder) {
-      searchParams.append('search_results_sort_order', `${params.sortBy}|${params.sortOrder}`);
+    if (validatedParams.sortBy && validatedParams.sortOrder) {
+      searchParams.append('search_results_sort_order', `${validatedParams.sortBy}|${validatedParams.sortOrder}`);
     }
 
     if (this.customTrackingCode) {
@@ -163,13 +205,29 @@ class AvantLinkService {
 
     const url = `${this.baseUrl}?${searchParams.toString()}`;
 
-    console.log('🚀 AvantLink API Request:', url);
-    console.log('📋 Request params:', Object.fromEntries(searchParams));
+    // Only log in development mode without sensitive data
+    if (import.meta.env.DEV) {
+      console.log('🚀 AvantLink API Request initiated');
+      console.log('📋 Search term:', validatedParams.searchTerm);
+    }
 
     try {
-      const response = await fetch(url);
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'TCC-Deal-Buddy/1.0',
+        }
+      });
+
+      clearTimeout(timeoutId);
       
-      console.log('📡 API Response status:', response.status, response.statusText);
+      if (import.meta.env.DEV) {
+        console.log('📡 API Response status:', response.status, response.statusText);
+      }
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -178,13 +236,19 @@ class AvantLinkService {
       }
 
       const data = await response.json();
-      console.log('✅ API Response data:', data);
+      
+      if (import.meta.env.DEV) {
+        console.log('✅ API Response received with', Array.isArray(data) ? data.length : 'unknown', 'items');
+      }
       
       // Transform the API response to our expected format
-      const result = this.transformApiResponse(data, params);
-      console.log('🔄 Transformed result:', result);
+      const result = this.transformApiResponse(data, validatedParams);
       return result;
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('⏰ Request timeout: AvantLink API took too long to respond');
+        throw new Error('Request timeout - please try again');
+      }
       console.error('💥 Error fetching from AvantLink API:', error);
       throw error;
     }

@@ -12,23 +12,8 @@ const Header: React.FC = () => {
               <ShoppingBag className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">AffiliateMart</h1>
-              <p className="text-sm text-gray-600">Discover amazing products & deals</p>
-            </div>
-          </div>
-          
-          <div className="hidden md:flex items-center space-x-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">1000+</p>
-              <p className="text-xs text-gray-600">Products</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">50+</p>
-              <p className="text-xs text-gray-600">Merchants</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">24/7</p>
-              <p className="text-xs text-gray-600">Updates</p>
+              <h1 className="text-2xl font-bold text-gray-900">TCC Deal Buddy</h1>
+              <p className="text-sm text-gray-600">Your affiliate marketing companion</p>
             </div>
           </div>
         </div>

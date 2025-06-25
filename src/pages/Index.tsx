@@ -16,7 +16,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="text-center">
             <p className="text-gray-600">
-              © 2024 AffiliateMart. All rights reserved. 
+              © 2024 TCC Deal Buddy. All rights reserved. 
               <span className="block mt-2 text-sm text-gray-500">
                 Affiliate links help support this site. Thank you for your support!
               </span>

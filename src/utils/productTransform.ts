@@ -6,11 +6,11 @@ import { Product } from '../components/ProductCard';
 /**
  * Transform AvantLink product data to our internal Product format
  */
-export function transformAvantLinkProduct(avantLinkProduct: AvantLinkProduct): Product {
-  // Parse prices safely
-  const retailPrice = parseFloat(avantLinkProduct['Retail Price']) || 0;
-  const salePrice = parseFloat(avantLinkProduct['Sale Price']) || retailPrice;
-  const discountPercent = parseFloat(avantLinkProduct['Price Discount Percent']) || 0;
+export function transformAvantLinkProduct(avantLinkProduct: any): Product {
+  // Parse prices safely - handle both old and new field formats
+  const retailPrice = parseFloat(avantLinkProduct['Retail Price'] || avantLinkProduct.dblProductPrice) || 0;
+  const salePrice = parseFloat(avantLinkProduct['Sale Price'] || avantLinkProduct.dblProductSalePrice) || retailPrice;
+  const discountPercent = parseFloat(avantLinkProduct['Price Discount Percent'] || avantLinkProduct.dblProductOnSalePercent) || 0;
 
   // Determine the current price (use sale price if available and lower than retail)
   const currentPrice = salePrice > 0 && salePrice < retailPrice ? salePrice : retailPrice;
@@ -18,30 +18,37 @@ export function transformAvantLinkProduct(avantLinkProduct: AvantLinkProduct): P
 
   // Choose the best description available
   const description = avantLinkProduct['Short Description'] || 
+                     avantLinkProduct.txtShortDescription ||
                      avantLinkProduct['Abbreviated Description'] || 
+                     avantLinkProduct.txtAbbreviatedDescription ||
                      avantLinkProduct['Description'] || 
+                     avantLinkProduct.txtLongDescription ||
                      'No description available';
 
   // Choose the best image available
   const imageUrl = avantLinkProduct['Medium Image'] || 
+                   avantLinkProduct.strMediumImage ||
                    avantLinkProduct['Large Image'] || 
+                   avantLinkProduct.strLargeImage ||
                    avantLinkProduct['Thumbnail Image'] || 
+                   avantLinkProduct.strThumbnailImage ||
                    '/placeholder-product.svg';
 
   // Generate a clean product ID
   const productId = avantLinkProduct['Product Id'] || 
-                    `${avantLinkProduct['Merchant Name']}-${avantLinkProduct['Product SKU']}`.replace(/\s+/g, '-');
+                    avantLinkProduct.lngProductId ||
+                    `${avantLinkProduct['Merchant Name'] || avantLinkProduct.strMerchantName}-${avantLinkProduct['Product SKU'] || avantLinkProduct.strProductSKU}`.replace(/\s+/g, '-');
 
   return {
-    id: productId,
-    name: avantLinkProduct['Product Name'] || 'Unnamed Product',
+    id: productId.toString(),
+    name: avantLinkProduct['Product Name'] || avantLinkProduct.strProductName || 'Unnamed Product',
     description: cleanDescription(description),
     price: currentPrice,
     originalPrice,
     imageUrl,
-    affiliateUrl: avantLinkProduct['Buy URL'] || avantLinkProduct['Product URL'] || '#',
-    merchant: avantLinkProduct['Merchant Name'] || 'Unknown Merchant',
-    category: avantLinkProduct['Category Name'] || avantLinkProduct['Department Name'] || 'General',
+    affiliateUrl: avantLinkProduct['Buy URL'] || avantLinkProduct.strBuyURL || avantLinkProduct['Product URL'] || avantLinkProduct.strProductURL || '#',
+    merchant: avantLinkProduct['Merchant Name'] || avantLinkProduct.strMerchantName || 'Unknown Merchant',
+    category: avantLinkProduct['Category Name'] || avantLinkProduct.strCategoryName || avantLinkProduct['Department Name'] || avantLinkProduct.strDepartmentName || 'General',
     discount: discountPercent > 0 ? Math.round(discountPercent) : undefined,
     rating: undefined // AvantLink doesn't provide ratings, could be enhanced later
   };
@@ -88,11 +95,11 @@ function cleanDescription(description: string): string {
 /**
  * Extract unique categories from AvantLink products
  */
-export function extractCategories(avantLinkProducts: AvantLinkProduct[]): string[] {
+export function extractCategories(avantLinkProducts: any[]): string[] {
   const categories = new Set<string>();
   
   avantLinkProducts.forEach(product => {
-    const category = product['Category Name'] || product['Department Name'];
+    const category = product['Category Name'] || product.strCategoryName || product['Department Name'] || product.strDepartmentName;
     if (category && category.trim()) {
       categories.add(category.trim());
     }
@@ -104,11 +111,11 @@ export function extractCategories(avantLinkProducts: AvantLinkProduct[]): string
 /**
  * Extract unique merchants from AvantLink products
  */
-export function extractMerchants(avantLinkProducts: AvantLinkProduct[]): string[] {
+export function extractMerchants(avantLinkProducts: any[]): string[] {
   const merchants = new Set<string>();
   
   avantLinkProducts.forEach(product => {
-    const merchant = product['Merchant Name'];
+    const merchant = product['Merchant Name'] || product.strMerchantName;
     if (merchant && merchant.trim()) {
       merchants.add(merchant.trim());
     }

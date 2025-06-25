@@ -2,26 +2,49 @@
 // Handles all interactions with the AvantLink affiliate API
 
 export interface AvantLinkProduct {
-  'Product Id': string;
-  'Product Name': string;
-  'Description': string;
-  'Abbreviated Description': string;
-  'Short Description': string;
-  'Retail Price': string;
-  'Sale Price': string;
-  'Medium Image': string;
-  'Large Image': string;
-  'Thumbnail Image': string;
-  'Buy URL': string;
-  'Product URL': string;
-  'Merchant Name': string;
-  'Category Name': string;
-  'Department Name': string;
-  'Brand Name': string;
-  'Product SKU': string;
-  'Match Score': string;
-  'Price Discount Percent': string;
-  'Price Discount Amount': string;
+  // Actual API field names from AvantLink
+  lngProductId: string;
+  strProductSKU: string;
+  strProductName: string;
+  strBrandName: string;
+  dblProductPrice: string;
+  dblProductSalePrice: string;
+  txtShortDescription: string;
+  txtLongDescription: string;
+  strThumbnailImage: string;
+  strMediumImage: string;
+  strLargeImage: string;
+  strBuyURL: string;
+  strDepartmentName: string;
+  strCategoryName: string;
+  intSearchResultScore: string;
+  txtAbbreviatedDescription: string;
+  strMerchantName: string;
+  strProductURL: string;
+  dblProductOnSalePercent: string;
+  dblProductOnSaleAmount: string;
+  
+  // Legacy field names for backward compatibility (may not exist)
+  'Product Id'?: string;
+  'Product Name'?: string;
+  'Description'?: string;
+  'Abbreviated Description'?: string;
+  'Short Description'?: string;
+  'Retail Price'?: string;
+  'Sale Price'?: string;
+  'Medium Image'?: string;
+  'Large Image'?: string;
+  'Thumbnail Image'?: string;
+  'Buy URL'?: string;
+  'Product URL'?: string;
+  'Merchant Name'?: string;
+  'Category Name'?: string;
+  'Department Name'?: string;
+  'Brand Name'?: string;
+  'Product SKU'?: string;
+  'Match Score'?: string;
+  'Price Discount Percent'?: string;
+  'Price Discount Amount'?: string;
 }
 
 export interface AvantLinkApiResponse {
@@ -49,15 +72,17 @@ class AvantLinkService {
   private baseUrl = 'https://www.avantlink.com/api.php';
   private affiliateId: string;
   private apiKey: string;
+  private websiteId: string;
   private customTrackingCode?: string;
 
   constructor() {
     this.affiliateId = import.meta.env.VITE_AVANTLINK_AFFILIATE_ID;
     this.apiKey = import.meta.env.VITE_AVANTLINK_API_KEY;
+    this.websiteId = import.meta.env.VITE_AVANTLINK_WEBSITE_ID;
     this.customTrackingCode = import.meta.env.VITE_AVANTLINK_CUSTOM_TRACKING_CODE;
 
     if (!this.affiliateId || !this.apiKey) {
-      console.warn('AvantLink API credentials not configured. Please set VITE_AVANTLINK_AFFILIATE_ID and VITE_AVANTLINK_API_KEY environment variables.');
+      console.warn('AvantLink API credentials not configured. Please set VITE_AVANTLINK_AFFILIATE_ID, VITE_AVANTLINK_API_KEY, and VITE_AVANTLINK_WEBSITE_ID environment variables.');
     }
   }
 
@@ -65,7 +90,7 @@ class AvantLinkService {
    * Search for products using the AvantLink ProductSearch API
    */
   async searchProducts(params: ProductSearchParams): Promise<AvantLinkApiResponse> {
-    if (!this.affiliateId || !this.apiKey) {
+    if (!this.affiliateId || !this.apiKey || !this.websiteId) {
       throw new Error('AvantLink API credentials not configured');
     }
 
@@ -73,10 +98,11 @@ class AvantLinkService {
       module: 'ProductSearch',
       affiliate_id: this.affiliateId,
       auth_key: this.apiKey,
+      website_id: this.websiteId,
       search_term: params.searchTerm,
       output: 'json',
       search_results_count: (params.resultsPerPage || 20).toString(),
-      search_results_base: ((params.page || 1) - 1) * (params.resultsPerPage || 20)).toString(),
+      search_results_base: (((params.page || 1) - 1) * (params.resultsPerPage || 20)).toString(),
     });
 
     // Add optional search parameters
@@ -137,19 +163,29 @@ class AvantLinkService {
 
     const url = `${this.baseUrl}?${searchParams.toString()}`;
 
+    console.log('🚀 AvantLink API Request:', url);
+    console.log('📋 Request params:', Object.fromEntries(searchParams));
+
     try {
       const response = await fetch(url);
       
+      console.log('📡 API Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error Response:', errorText);
         throw new Error(`AvantLink API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('✅ API Response data:', data);
       
       // Transform the API response to our expected format
-      return this.transformApiResponse(data, params);
+      const result = this.transformApiResponse(data, params);
+      console.log('🔄 Transformed result:', result);
+      return result;
     } catch (error) {
-      console.error('Error fetching from AvantLink API:', error);
+      console.error('💥 Error fetching from AvantLink API:', error);
       throw error;
     }
   }
@@ -237,7 +273,25 @@ class AvantLinkService {
    * Check if API credentials are configured
    */
   isConfigured(): boolean {
-    return !!(this.affiliateId && this.apiKey);
+    return !!(this.affiliateId && this.apiKey && this.websiteId);
+  }
+
+  /**
+   * Test API connection with a simple search
+   */
+  async testConnection(): Promise<boolean> {
+    try {
+      console.log('🧪 Testing AvantLink API connection...');
+      const result = await this.searchProducts({
+        searchTerm: 'test',
+        resultsPerPage: 1
+      });
+      console.log('✅ API connection test successful!', result);
+      return true;
+    } catch (error) {
+      console.error('❌ API connection test failed:', error);
+      return false;
+    }
   }
 
   /**

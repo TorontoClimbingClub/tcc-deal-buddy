@@ -15,6 +15,7 @@ interface UseAvantLinkResult {
   searchProducts: (params: ProductSearchParams) => Promise<void>;
   getPopularProducts: (category?: string) => Promise<void>;
   getSaleProducts: () => Promise<void>;
+  getSaleProductsByMerchants: (merchantIds: string[], searchTerm?: string) => Promise<void>;
   clearProducts: () => void;
   isConfigured: boolean;
 }
@@ -116,6 +117,25 @@ export function useAvantLink(options: UseAvantLinkOptions = {}): UseAvantLinkRes
     }
   }, [isConfigured, handleApiResponse, handleApiError]);
 
+  const getSaleProductsByMerchants = useCallback(async (merchantIds: string[], searchTerm = 'sale') => {
+    if (!isConfigured) {
+      setError('AvantLink API not configured. Please check your environment variables.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await avantLinkService.getSaleProductsByMerchants(merchantIds, searchTerm);
+      handleApiResponse(response);
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConfigured, handleApiResponse, handleApiError]);
+
   const clearProducts = useCallback(() => {
     setProducts([]);
     setTotalResults(0);
@@ -143,6 +163,7 @@ export function useAvantLink(options: UseAvantLinkOptions = {}): UseAvantLinkRes
     searchProducts,
     getPopularProducts,
     getSaleProducts,
+    getSaleProductsByMerchants,
     clearProducts,
     isConfigured
   };

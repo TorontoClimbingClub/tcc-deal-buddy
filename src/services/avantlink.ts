@@ -35,6 +35,7 @@ export interface ProductSearchParams {
   searchTerm: string;
   category?: string;
   merchant?: string;
+  merchantIds?: string[]; // Array of specific merchant IDs to filter by
   priceMin?: number;
   priceMax?: number;
   onSaleOnly?: boolean;
@@ -45,18 +46,18 @@ export interface ProductSearchParams {
 }
 
 class AvantLinkService {
-  private baseUrl = 'https://classic.avantlink.com/api.php';
+  private baseUrl = 'https://www.avantlink.com/api.php';
   private affiliateId: string;
-  private websiteId: string;
+  private apiKey: string;
   private customTrackingCode?: string;
 
   constructor() {
     this.affiliateId = import.meta.env.VITE_AVANTLINK_AFFILIATE_ID;
-    this.websiteId = import.meta.env.VITE_AVANTLINK_WEBSITE_ID;
+    this.apiKey = import.meta.env.VITE_AVANTLINK_API_KEY;
     this.customTrackingCode = import.meta.env.VITE_AVANTLINK_CUSTOM_TRACKING_CODE;
 
-    if (!this.affiliateId || !this.websiteId) {
-      console.warn('AvantLink API credentials not configured. Please set VITE_AVANTLINK_AFFILIATE_ID and VITE_AVANTLINK_WEBSITE_ID environment variables.');
+    if (!this.affiliateId || !this.apiKey) {
+      console.warn('AvantLink API credentials not configured. Please set VITE_AVANTLINK_AFFILIATE_ID and VITE_AVANTLINK_API_KEY environment variables.');
     }
   }
 
@@ -64,14 +65,14 @@ class AvantLinkService {
    * Search for products using the AvantLink ProductSearch API
    */
   async searchProducts(params: ProductSearchParams): Promise<AvantLinkApiResponse> {
-    if (!this.affiliateId || !this.websiteId) {
+    if (!this.affiliateId || !this.apiKey) {
       throw new Error('AvantLink API credentials not configured');
     }
 
     const searchParams = new URLSearchParams({
       module: 'ProductSearch',
       affiliate_id: this.affiliateId,
-      website_id: this.websiteId,
+      auth_key: this.apiKey,
       search_term: params.searchTerm,
       output: 'json',
       search_results_count: (params.resultsPerPage || 20).toString(),
@@ -81,6 +82,11 @@ class AvantLinkService {
     // Add optional search parameters
     if (params.category && params.category !== 'all') {
       searchParams.append('search_category', params.category);
+    }
+
+    // Add merchant ID filtering if specified
+    if (params.merchantIds && params.merchantIds.length > 0) {
+      searchParams.append('merchant_ids', params.merchantIds.join(','));
     }
 
     if (params.priceMin) {
@@ -188,6 +194,20 @@ class AvantLinkService {
   }
 
   /**
+   * Get sale products from specific merchants
+   */
+  async getSaleProductsByMerchants(merchantIds: string[], searchTerm = 'sale'): Promise<AvantLinkApiResponse> {
+    return this.searchProducts({
+      searchTerm,
+      merchantIds,
+      onSaleOnly: true,
+      sortBy: 'Price Discount Percent',
+      sortOrder: 'desc',
+      resultsPerPage: 50
+    });
+  }
+
+  /**
    * Transform AvantLink API response to our internal format
    */
   private transformApiResponse(apiData: any, params: ProductSearchParams): AvantLinkApiResponse {
@@ -217,7 +237,7 @@ class AvantLinkService {
    * Check if API credentials are configured
    */
   isConfigured(): boolean {
-    return !!(this.affiliateId && this.websiteId);
+    return !!(this.affiliateId && this.apiKey);
   }
 
   /**

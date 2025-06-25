@@ -1,6 +1,6 @@
-# AvantLink API Integration Setup
+# AvantLink API Integration Setup - Merchant Sale Tracker
 
-This guide explains how to set up the AvantLink API integration in your TCC Deal Buddy application.
+This guide explains how to set up the AvantLink API integration in your TCC Deal Buddy application for focused merchant sale tracking.
 
 ## Prerequisites
 
@@ -10,15 +10,18 @@ This guide explains how to set up the AvantLink API integration in your TCC Deal
 
 ## Getting Your API Credentials
 
-### Step 1: Get Your Affiliate ID
+### Step 1: Get Your API Credentials
 1. Log into your AvantLink account
-2. Navigate to **Account** → **Account Settings**
-3. Your **Affiliate ID** will be displayed in your account information
+2. Navigate to **Account** → **API Keys** (or similar section)
+3. You'll see two important values:
+   - **Affiliate ID**: Your unique affiliate identifier (e.g., 348445)
+   - **API Authorization Key**: A long string (e.g., 52917e7babaeaba80c5b73e275d42186)
 
-### Step 2: Get Your Website ID
-1. Go to **Tools** → **Websites**
-2. Find your website in the list
-3. The **Website ID** is shown in the website details
+### Step 3: Find Merchant IDs for Tracking
+1. Go to **Tools** → **Link Locator**
+2. Search for merchants you want to track for sale items
+3. Note down the **Merchant ID** for each merchant (usually 4-5 digit numbers)
+4. You can track up to 2 merchants for focused monitoring
 
 ## Configuration
 
@@ -31,14 +34,14 @@ This guide explains how to set up the AvantLink API integration in your TCC Deal
 
 2. Edit the `.env` file and add your credentials:
    ```env
-   VITE_AVANTLINK_AFFILIATE_ID=your_affiliate_id_here
-   VITE_AVANTLINK_WEBSITE_ID=your_website_id_here
+   VITE_AVANTLINK_AFFILIATE_ID=348445
+   VITE_AVANTLINK_API_KEY=52917e7babaeaba80c5b73e275d42186
    VITE_AVANTLINK_CUSTOM_TRACKING_CODE=tcc-deal-buddy
    ```
 
-3. Replace the placeholder values:
-   - `your_affiliate_id_here` → Your actual AvantLink Affiliate ID
-   - `your_website_id_here` → Your actual AvantLink Website ID
+3. Replace with your actual values:
+   - Use your actual **Affiliate ID** (like 348445)
+   - Use your actual **API Authorization Key** (the long string)
    - Keep the custom tracking code or change it to your preference
 
 ### Important Notes
@@ -55,17 +58,17 @@ This guide explains how to set up the AvantLink API integration in your TCC Deal
 npm run dev
 ```
 
-### Step 2: Verify Configuration
-1. Open the application in your browser
-2. If configured correctly, you should see:
-   - Quick search buttons (Electronics, Clothing, etc.)
-   - No "API not configured" warning messages
-   - Products should load when searching
+### Step 2: Configure Merchants
+1. Open the application and go to the **Merchant Setup** tab
+2. Add your target merchant IDs (the ones you found in Step 3 above)
+3. Enter both the Merchant ID and a friendly name for each merchant
+4. You can add up to 2 merchants for focused tracking
 
-### Step 3: Test API Calls
-1. Try the quick search buttons
-2. Use the search bar to look for specific products
-3. Check browser console for any API errors
+### Step 3: Test Sale Tracking
+1. Switch to the **Sale Tracker** tab
+2. Click "Find Sale Items" to search for current deals
+3. Use "Clearance Items" and "Discounted Items" for specific searches
+4. Check browser console for any API errors
 
 ## API Rate Limits
 
@@ -80,24 +83,29 @@ The application automatically handles:
 
 ## Features Implemented
 
-### Product Search
-- **Text Search**: Search products by name, description, brand
-- **Category Filtering**: Filter by product categories
-- **Price Filtering**: Filter by price ranges
-- **Merchant Filtering**: Filter by specific merchants
-- **Quick Search**: Pre-defined category buttons
+### Merchant Sale Tracking
+- **Focused Monitoring**: Track up to 2 specific merchants for deals
+- **Sale-Only Focus**: Automatically filters for discounted items
+- **Merchant Configuration**: Easy setup interface for target merchants
+- **Real-Time Tracking**: Live search for current sale items
+
+### Sale Discovery
+- **Find Sale Items**: Primary search for all current deals
+- **Clearance Search**: Specific search for clearance inventory
+- **Discount Search**: General discounted product discovery
+- **Sort by Discount**: Products ordered by highest discounts first
 
 ### Product Display
-- **Product Cards**: Show image, name, price, merchant, description
-- **Discount Badges**: Display sale percentages
-- **Affiliate Links**: Proper tracking for commissions
-- **Responsive Grid**: Works on desktop and mobile
+- **Sale-Focused Cards**: Prominent display of discount percentages
+- **Merchant Information**: Clear merchant identification
+- **Affiliate Links**: Proper commission tracking for all clicks
+- **Responsive Design**: Optimized for desktop and mobile
 
-### Error Handling
-- **API Errors**: User-friendly error messages
-- **Missing Images**: Automatic fallback to placeholder
-- **Loading States**: Visual feedback during API calls
-- **Configuration Checks**: Warns if API credentials are missing
+### Smart Configuration
+- **Merchant Setup Tab**: Dedicated interface for merchant management
+- **API Validation**: Automatic credential verification
+- **Error Recovery**: Graceful handling of API issues
+- **Usage Guidance**: Built-in help for finding merchant IDs
 
 ## Troubleshooting
 
@@ -108,20 +116,21 @@ The application automatically handles:
    - Ensure variable names start with `VITE_`
    - Restart the development server
 
-2. **"Failed to fetch products" error**
+2. **"Setup Required" message on Sale Tracker tab**
+   - Go to the Merchant Setup tab
+   - Add at least one merchant ID and name
+   - Merchant IDs should be 4-5 digit numbers from AvantLink
+
+3. **No sale items found**
+   - Verify your merchant IDs are correct and active
+   - Some merchants may not have current sales
+   - Try different search terms like "clearance" or "discount"
+
+4. **"Failed to fetch products" error**
    - Verify your Affiliate ID and Website ID are correct
    - Check that your AvantLink account has API access
    - Ensure your website is approved in AvantLink
-
-3. **No products returned**
-   - Try different search terms
-   - Some categories may have limited products
-   - Check the browser console for API response details
-
-4. **Images not loading**
-   - AvantLink image URLs may sometimes be broken
-   - The app automatically falls back to placeholder images
-   - This is normal and expected behavior
+   - Confirm merchant IDs are valid and you're approved for those merchants
 
 ### Debug Mode
 

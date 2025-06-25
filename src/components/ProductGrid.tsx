@@ -3,9 +3,11 @@ import React, { useState, useMemo, useEffect } from 'react';
 import ProductCard, { Product } from './ProductCard';
 import SearchFilters from './SearchFilters';
 import ProductModal from './ProductModal';
+import { MerchantConfig } from './MerchantConfig';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, RefreshCw, AlertCircle, Target, ShoppingBag } from 'lucide-react';
 import { useAvantLink } from '../hooks/useAvantLink';
 
 const ProductGrid: React.FC = () => {
@@ -16,6 +18,8 @@ const ProductGrid: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [lastSearchTerm, setLastSearchTerm] = useState('');
+  const [selectedMerchants, setSelectedMerchants] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('deals');
 
   const {
     products,
@@ -24,15 +28,21 @@ const ProductGrid: React.FC = () => {
     searchProducts,
     getPopularProducts,
     getSaleProducts,
+    getSaleProductsByMerchants,
     isConfigured
   } = useAvantLink();
 
-  // Load popular products on mount if configured
+  // Load merchant sale products on mount if configured and merchants selected
   useEffect(() => {
     if (isConfigured && products.length === 0) {
-      getPopularProducts();
+      if (selectedMerchants.length > 0) {
+        getSaleProductsByMerchants(selectedMerchants);
+      } else {
+        // Show general sale products if no merchants configured
+        getSaleProducts();
+      }
     }
-  }, [isConfigured, products.length, getPopularProducts]);
+  }, [isConfigured, products.length, selectedMerchants, getSaleProductsByMerchants, getSaleProducts]);
 
   // Extract unique categories and merchants from actual products
   const categories = useMemo(() => 
@@ -107,14 +117,34 @@ const ProductGrid: React.FC = () => {
   };
 
   const handleRefresh = () => {
-    if (lastSearchTerm) {
+    if (selectedMerchants.length > 0) {
+      getSaleProductsByMerchants(selectedMerchants, lastSearchTerm || 'sale');
+    } else if (lastSearchTerm) {
       searchProducts({
         searchTerm: lastSearchTerm,
         category: selectedCategory !== 'all' ? selectedCategory : undefined,
         resultsPerPage: 20
       });
     } else {
-      getPopularProducts();
+      getSaleProducts();
+    }
+  };
+
+  const handleMerchantsChange = (merchantIds: string[]) => {
+    setSelectedMerchants(merchantIds);
+    // Automatically fetch sale products for new merchants
+    if (merchantIds.length > 0) {
+      getSaleProductsByMerchants(merchantIds);
+    }
+  };
+
+  const handleSearchDeals = async () => {
+    if (selectedMerchants.length > 0) {
+      await getSaleProductsByMerchants(selectedMerchants, searchTerm || 'sale');
+      setLastSearchTerm(searchTerm || 'sale');
+    } else {
+      await getSaleProducts();
+      setLastSearchTerm('sale');
     }
   };
 
@@ -125,7 +155,7 @@ const ProductGrid: React.FC = () => {
         <Alert className="mb-6 border-yellow-200 bg-yellow-50">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
-            <strong>AvantLink API Not Configured:</strong> Please set your VITE_AVANTLINK_AFFILIATE_ID and VITE_AVANTLINK_WEBSITE_ID environment variables to start showing products.
+            <strong>AvantLink API Not Configured:</strong> Please set your VITE_AVANTLINK_AFFILIATE_ID and VITE_AVANTLINK_API_KEY environment variables to start showing products.
           </AlertDescription>
         </Alert>
       )}
@@ -140,50 +170,92 @@ const ProductGrid: React.FC = () => {
         </Alert>
       )}
 
-      {/* Quick Search Buttons */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => handleQuickSearch('electronics')}
-          disabled={loading || !isConfigured}
-        >
-          Electronics
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => handleQuickSearch('clothing')}
-          disabled={loading || !isConfigured}
-        >
-          Clothing
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => handleQuickSearch('home')}
-          disabled={loading || !isConfigured}
-        >
-          Home & Garden
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => getSaleProducts()}
-          disabled={loading || !isConfigured}
-        >
-          Sale Items
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={loading || !isConfigured}
-        >
-          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="deals" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Sale Tracker
+          </TabsTrigger>
+          <TabsTrigger value="config" className="flex items-center gap-2">
+            <ShoppingBag className="h-4 w-4" />
+            Merchant Setup
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="config" className="space-y-6">
+          <MerchantConfig 
+            selectedMerchants={selectedMerchants}
+            onMerchantsChange={handleMerchantsChange}
+          />
+        </TabsContent>
+
+        <TabsContent value="deals" className="space-y-6">
+          {/* Sale Tracker Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Sale Tracker</h2>
+              <p className="text-gray-600 mt-1">
+                {selectedMerchants.length > 0 
+                  ? `Monitoring ${selectedMerchants.length} merchant${selectedMerchants.length !== 1 ? 's' : ''} for sale items`
+                  : 'Configure merchants to start tracking specific deals'
+                }
+              </p>
+            </div>
+            <Button 
+              onClick={handleRefresh}
+              disabled={loading || !isConfigured}
+              variant="outline"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh Deals
+            </Button>
+          </div>
+
+          {/* Merchant Status */}
+          {selectedMerchants.length === 0 && (
+            <Alert className="border-blue-200 bg-blue-50">
+              <Target className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                <strong>Setup Required:</strong> Go to the Merchant Setup tab to configure which merchants you want to monitor for sale items.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Quick Action Buttons */}
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              onClick={handleSearchDeals}
+              disabled={loading || !isConfigured}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Target className="w-4 h-4 mr-2" />
+              Find Sale Items
+            </Button>
+            {selectedMerchants.length > 0 && (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm('clearance');
+                    getSaleProductsByMerchants(selectedMerchants, 'clearance');
+                  }}
+                  disabled={loading || !isConfigured}
+                >
+                  Clearance Items
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchTerm('discount');
+                    getSaleProductsByMerchants(selectedMerchants, 'discount');
+                  }}
+                  disabled={loading || !isConfigured}
+                >
+                  Discounted Items
+                </Button>
+              </>
+            )}
+          </div>
 
       <SearchFilters
         searchTerm={searchTerm}
@@ -281,11 +353,13 @@ const ProductGrid: React.FC = () => {
         </>
       )}
 
-      <ProductModal
-        product={selectedProduct}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-      />
+          <ProductModal
+            product={selectedProduct}
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

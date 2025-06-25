@@ -38,6 +38,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails }) => 
           alt={product.name}
           className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
           onClick={() => onViewDetails(product)}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/placeholder-product.svg';
+          }}
         />
         {product.discount && (
           <Badge className="absolute top-2 left-2 bg-red-500 text-white">

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,6 +17,9 @@ interface SearchFiltersProps {
   onPriceRangeChange: (value: string) => void;
   categories: string[];
   merchants: string[];
+  onSearch?: () => void;
+  loading?: boolean;
+  disabled?: boolean;
 }
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({
@@ -29,12 +32,20 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   priceRange,
   onPriceRangeChange,
   categories,
-  merchants
+  merchants,
+  onSearch,
+  loading = false,
+  disabled = false
 }) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && onSearch) {
+      onSearch();
+    }
+  };
   return (
     <Card className="mb-6 shadow-sm">
       <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           {/* Search Input */}
           <div className="lg:col-span-2 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -42,12 +53,29 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={disabled}
               className="pl-10 h-10"
             />
           </div>
+
+          {/* Search Button */}
+          <div>
+            <Button 
+              onClick={onSearch}
+              disabled={disabled || loading || !searchTerm.trim()}
+              className="h-10 w-full"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                'Search'
+              )}
+            </Button>
+          </div>
           
           {/* Category Filter */}
-          <Select value={selectedCategory} onValueChange={onCategoryChange}>
+          <Select value={selectedCategory} onValueChange={onCategoryChange} disabled={disabled}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
@@ -62,7 +90,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           </Select>
           
           {/* Merchant Filter */}
-          <Select value={selectedMerchant} onValueChange={onMerchantChange}>
+          <Select value={selectedMerchant} onValueChange={onMerchantChange} disabled={disabled}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="All Merchants" />
             </SelectTrigger>
@@ -77,7 +105,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           </Select>
           
           {/* Price Range Filter */}
-          <Select value={priceRange} onValueChange={onPriceRangeChange}>
+          <Select value={priceRange} onValueChange={onPriceRangeChange} disabled={disabled}>
             <SelectTrigger className="h-10">
               <SelectValue placeholder="All Prices" />
             </SelectTrigger>

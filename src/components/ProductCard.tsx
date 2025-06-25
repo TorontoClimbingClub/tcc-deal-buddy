@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export interface Product {
@@ -77,4 +78,3 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onViewDetails }) => 
 };
 
 export default ProductCard;
-export type { Product };

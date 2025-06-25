@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import avantLinkService from '../services/avantlink';
 import { Product } from '../components/ProductCard';
@@ -79,7 +78,11 @@ export function useAvantLink(): UseAvantLinkResult {
     resultsPerPage?: number;
   }) => {
     console.log('🔍 Search Products called with params:', params);
-    await handleApiCall(() => avantLinkService.searchProducts(params));
+    const searchTerm = params.searchTerm || 'deals';
+    await handleApiCall(() => avantLinkService.searchProducts({
+      ...params,
+      searchTerm
+    }));
   }, [handleApiCall]);
 
   const loadPopularProducts = useCallback(async () => {

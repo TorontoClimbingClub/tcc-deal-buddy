@@ -213,7 +213,7 @@ export async function dailyFullSync(): Promise<{
             onSaleOnly: true,
             page,
             resultsPerPage: 50,
-            sortBy: 'Price Discount Percent',
+            sortBy: 'Match Score',
             sortOrder: 'desc'
           });
           
@@ -274,7 +274,7 @@ export async function dailyFullSync(): Promise<{
             onSaleOnly: true,
             page,
             resultsPerPage: 50,
-            sortBy: 'Price Discount Percent',
+            sortBy: 'Match Score',
             sortOrder: 'desc'
           });
           
@@ -408,7 +408,7 @@ export async function syncMerchantProducts(merchantIds: string[], merchantName: 
           onSaleOnly: true,
           page,
           resultsPerPage: 50,
-          sortBy: 'Price Discount Percent',
+          sortBy: 'Match Score',
           sortOrder: 'desc'
         });
         

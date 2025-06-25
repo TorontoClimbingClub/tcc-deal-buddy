@@ -62,7 +62,7 @@ export interface ProductSearchParams {
   priceMin?: number;
   priceMax?: number;
   onSaleOnly?: boolean;
-  sortBy?: 'Retail Price' | 'Product Name' | 'Merchant Name' | 'Match Score';
+  sortBy?: 'Retail Price' | 'Product Name' | 'Merchant Name' | 'Match Score' | 'Price Discount Percent';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   resultsPerPage?: number;

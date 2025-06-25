@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import ProductCard, { Product } from './ProductCard';
 import ProductModal from './ProductModal';
@@ -327,7 +326,7 @@ const ProductGrid: React.FC = () => {
                     className="mt-4"
                     onClick={() => {
                       setSelectedCategory('all');
-                      setSelectedMerchant('all');
+                      setSelectedBrand('all');
                       setPriceRange('all');
                       setSearchTerm('');
                     }}

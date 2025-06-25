@@ -63,6 +63,39 @@ export function useCart(): UseCartResult {
     return item ? item.quantity : 0;
   }, [cartItems]);
 
+  const removeFromCart = useCallback(async (sku: string, merchantId: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return;
+      }
+
+      const { error: deleteError } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('product_sku', sku)
+        .eq('merchant_id', merchantId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      setCartItems(prev => 
+        prev.filter(item => !(item.product_sku === sku && item.merchant_id === merchantId))
+      );
+      
+      await getCartSummary(); // Refresh summary
+      toast({
+        title: 'Removed from Cart',
+        description: 'Product removed from your cart.',
+      });
+    } catch (err) {
+      handleDatabaseError(err, 'remove from');
+    }
+  }, [handleDatabaseError, toast]);
+
   const getCart = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -216,39 +249,6 @@ export function useCart(): UseCartResult {
       handleDatabaseError(err, 'update');
     }
   }, [handleDatabaseError, toast, getCartSummary, removeFromCart]);
-
-  const removeFromCart = useCallback(async (sku: string, merchantId: number) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        return;
-      }
-
-      const { error: deleteError } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('product_sku', sku)
-        .eq('merchant_id', merchantId);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      setCartItems(prev => 
-        prev.filter(item => !(item.product_sku === sku && item.merchant_id === merchantId))
-      );
-      
-      await getCartSummary(); // Refresh summary
-      toast({
-        title: 'Removed from Cart',
-        description: 'Product removed from your cart.',
-      });
-    } catch (err) {
-      handleDatabaseError(err, 'remove from');
-    }
-  }, [handleDatabaseError, toast, getCartSummary]);
 
   const clearCart = useCallback(async () => {
     try {

@@ -372,6 +372,156 @@ async function logSyncJob(jobType: string, status: string, recordsProcessed = 0,
 }
 
 /**
+ * Sync sale products for specific merchants
+ */
+export async function syncMerchantProducts(merchantIds: string[], merchantName: string): Promise<{
+  totalSaved: number;
+  totalErrors: number;
+  errors: any[];
+}> {
+  const { avantLinkService } = await import('./avantlink');
+  
+  console.log(`🏪 Starting sync for ${merchantName} (IDs: ${merchantIds.join(', ')})...`);
+  
+  let totalSaved = 0;
+  let totalErrors = 0;
+  const allErrors: any[] = [];
+  
+  // Search terms optimized for outdoor/climbing gear
+  const searchTerms = [
+    'sale', 'clearance', 'discount', 'deal',
+    'climbing', 'outdoor', 'camping', 'hiking',
+    'gear', 'equipment', 'apparel', 'accessories'
+  ];
+  
+  try {
+    for (const term of searchTerms) {
+      console.log(`🔍 Searching "${term}" for ${merchantName}...`);
+      
+      let page = 1;
+      let hasMorePages = true;
+      
+      while (hasMorePages) {
+        const apiResponse = await avantLinkService.searchProducts({
+          searchTerm: term,
+          merchantIds: merchantIds,
+          onSaleOnly: true,
+          page,
+          resultsPerPage: 50,
+          sortBy: 'Price Discount Percent',
+          sortOrder: 'desc'
+        });
+        
+        if (apiResponse.products.length === 0) {
+          hasMorePages = false;
+          break;
+        }
+        
+        console.log(`📥 Retrieved ${apiResponse.products.length} products (page ${page})`);
+        
+        const result = await saveProductsToDatabase(apiResponse.products);
+        totalSaved += result.success;
+        totalErrors += result.errors.length;
+        allErrors.push(...result.errors);
+        
+        page++;
+        
+        if (apiResponse.products.length < 10 && page > 3) {
+          hasMorePages = false;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+    }
+    
+    console.log(`✅ ${merchantName} sync completed: ${totalSaved} saved, ${totalErrors} errors`);
+    
+    return {
+      totalSaved,
+      totalErrors,
+      errors: allErrors
+    };
+    
+  } catch (error) {
+    console.error(`💥 ${merchantName} sync failed:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Daily sync for multiple merchants
+ */
+export async function dailyMultiMerchantSync(): Promise<{
+  totalSaved: number;
+  totalErrors: number;
+  merchantResults: any[];
+}> {
+  console.log('🔄 Starting multi-merchant daily sync...');
+  
+  // Define your merchants here
+  const merchants = [
+    { name: 'MEC', ids: ['18557'] },  // MEC Mountain Equipment Company
+    { name: 'Climb On Equipment', ids: ['YOUR_CLIMB_ON_ID'] }  // Add the correct ID
+  ];
+  
+  let totalSaved = 0;
+  let totalErrors = 0;
+  const merchantResults: any[] = [];
+  
+  try {
+    await logSyncJob('daily_products', 'running');
+    
+    // Sync each merchant separately
+    for (const merchant of merchants) {
+      console.log(`\n🏪 Processing ${merchant.name}...`);
+      
+      try {
+        const result = await syncMerchantProducts(merchant.ids, merchant.name);
+        
+        totalSaved += result.totalSaved;
+        totalErrors += result.totalErrors;
+        
+        merchantResults.push({
+          merchant: merchant.name,
+          saved: result.totalSaved,
+          errors: result.totalErrors
+        });
+        
+        // Delay between merchants
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+      } catch (error) {
+        console.error(`❌ Failed to sync ${merchant.name}:`, error);
+        merchantResults.push({
+          merchant: merchant.name,
+          error: error.message
+        });
+      }
+    }
+    
+    await logSyncJob('daily_products', 'completed', totalSaved);
+    
+    console.log(`\n🎉 Multi-merchant sync completed!`);
+    console.log(`📊 Total saved: ${totalSaved}`);
+    console.log(`❌ Total errors: ${totalErrors}`);
+    merchantResults.forEach(r => {
+      console.log(`   ${r.merchant}: ${r.saved || 0} saved${r.error ? ` (Error: ${r.error})` : ''}`);
+    });
+    
+    return {
+      totalSaved,
+      totalErrors,
+      merchantResults
+    };
+    
+  } catch (error) {
+    console.error('💥 Multi-merchant sync failed:', error);
+    await logSyncJob('daily_products', 'failed', 0, error.message);
+    throw error;
+  }
+}
+
+/**
  * Save sale products from AvantLink API to database (simplified version)
  */
 export async function syncSaleProducts(searchTerm = 'sale', merchantIds?: string[]): Promise<void> {

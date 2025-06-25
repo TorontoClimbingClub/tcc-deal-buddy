@@ -76,6 +76,28 @@ export async function testFullDailySync() {
   }
 }
 
+export async function testMultiMerchantSync() {
+  console.log('🧪 Testing multi-merchant sync...');
+  
+  try {
+    const { dailyMultiMerchantSync } = await import('../services/productSync');
+    const result = await dailyMultiMerchantSync();
+    
+    console.log(`🎉 Multi-merchant sync completed!`);
+    console.log(`📊 Total saved: ${result.totalSaved}`);
+    console.log(`❌ Total errors: ${result.totalErrors}`);
+    console.log(`🏪 Merchant results:`);
+    result.merchantResults.forEach(r => {
+      console.log(`   ${r.merchant}: ${r.saved || 0} saved${r.error ? ` (Error: ${r.error})` : ''}`);
+    });
+    
+    return { success: true, result };
+  } catch (error) {
+    console.error('❌ Multi-merchant sync failed:', error);
+    return { success: false, error: error.message || error };
+  }
+}
+
 export async function testCleanup() {
   console.log('🧪 Testing old product cleanup...');
   

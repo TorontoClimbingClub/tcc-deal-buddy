@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import { Button } from '../components/ui/button';
-import { testProductSync, testFullDailySync, testCleanup } from '../utils/testSync';
+import { testProductSync, testFullDailySync, testCleanup, testMultiMerchantSync } from '../utils/testSync';
 import { debugDatabaseContents } from '../utils/debugDatabase';
 import { debugAvantLinkApi } from '../utils/debugApi';
 import { analyzeDuplicates } from '../utils/analyzeDuplicates';
@@ -43,6 +43,28 @@ const Index = () => {
       }
     } catch (error) {
       setTestResult(`❌ Full sync error: ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMultiMerchantSync = async () => {
+    setIsLoading(true);
+    setTestResult('Running multi-merchant sync...');
+    
+    try {
+      const result = await testMultiMerchantSync();
+      if (result.success) {
+        const merchantInfo = result.result.merchantResults
+          .map(r => `${r.merchant}: ${r.saved || 0} products${r.error ? ` (Error: ${r.error})` : ''}`)
+          .join('\n');
+        
+        setTestResult(`🎉 Multi-merchant sync completed!\n📊 Total saved: ${result.result.totalSaved} products\n\n🏪 Merchant Results:\n${merchantInfo}\n\n❌ Total errors: ${result.result.totalErrors}`);
+      } else {
+        setTestResult(`❌ Multi-merchant sync failed: ${result.error}`);
+      }
+    } catch (error) {
+      setTestResult(`❌ Multi-merchant sync error: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -236,6 +258,14 @@ ${result.merchantCount === 1 ?
           </Button>
           
           <Button 
+            onClick={handleMultiMerchantSync} 
+            disabled={isLoading}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            {isLoading ? 'Syncing...' : 'Multi-Merchant Sync'}
+          </Button>
+          
+          <Button 
             onClick={handleCleanup} 
             disabled={isLoading}
             className="bg-orange-600 hover:bg-orange-700"
@@ -246,17 +276,9 @@ ${result.merchantCount === 1 ?
           <Button 
             onClick={handleDebugDatabase} 
             disabled={isLoading}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-blue-600 hover:bg-blue-700"
           >
-            {isLoading ? 'Checking...' : 'Debug Database'}
-          </Button>
-          
-          <Button 
-            onClick={handleDebugApi} 
-            disabled={isLoading}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            {isLoading ? 'Checking...' : 'Debug API'}
+            {isLoading ? 'Checking...' : 'Check Database'}
           </Button>
           
           <Button 

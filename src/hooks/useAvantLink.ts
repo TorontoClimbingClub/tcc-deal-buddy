@@ -1,93 +1,45 @@
-// React hook for managing AvantLink API data and state
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { avantLinkService, AvantLinkApiResponse, ProductSearchParams } from '../services/avantlink';
-import { transformAvantLinkProducts } from '../utils/productTransform';
+import { useState, useCallback } from 'react';
+import avantLinkService from '../services/avantlink';
 import { Product } from '../components/ProductCard';
 
 interface UseAvantLinkResult {
   products: Product[];
   loading: boolean;
   error: string | null;
-  totalResults: number;
-  currentPage: number;
-  hasNextPage: boolean;
-  searchProducts: (params: ProductSearchParams) => Promise<void>;
-  getPopularProducts: (category?: string) => Promise<void>;
-  getSaleProducts: () => Promise<void>;
-  getSaleProductsByMerchants: (merchantIds: string[], searchTerm?: string) => Promise<void>;
-  clearProducts: () => void;
   isConfigured: boolean;
+  totalProducts: number;
+  searchProducts: (params: {
+    searchTerm?: string;
+    onSaleOnly?: boolean;
+    merchantIds?: string[];
+    resultsPerPage?: number;
+  }) => Promise<void>;
+  loadPopularProducts: () => Promise<void>;
+  clearProducts: () => void;
 }
 
-interface UseAvantLinkOptions {
-  autoFetch?: boolean;
-  defaultSearchTerm?: string;
-  resultsPerPage?: number;
-}
-
-export function useAvantLink(options: UseAvantLinkOptions = {}): UseAvantLinkResult {
-  const {
-    autoFetch = false,
-    defaultSearchTerm = 'popular',
-    resultsPerPage = 20
-  } = options;
-
+export function useAvantLink(): UseAvantLinkResult {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [totalResults, setTotalResults] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
 
-  // Rate limiting state
-  const lastRequestTime = useRef<number>(0);
-  const requestQueue = useRef<Promise<any> | null>(null);
-  const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests
+  // Check if API is configured
+  const isConfigured = !!(
+    import.meta.env.VITE_AVANTLINK_AFFILIATE_ID && 
+    import.meta.env.VITE_AVANTLINK_API_KEY
+  );
 
-  // Check if AvantLink is configured
-  const isConfigured = avantLinkService.isConfigured();
+  console.log('🔧 AvantLink Configuration Check:', {
+    affiliateId: import.meta.env.VITE_AVANTLINK_AFFILIATE_ID,
+    apiKeyExists: !!import.meta.env.VITE_AVANTLINK_API_KEY,
+    isConfigured
+  });
 
-  // Rate limiting wrapper
-  const withRateLimit = useCallback(async <T>(apiCall: () => Promise<T>): Promise<T> => {
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime.current;
-
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      const delay = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-      console.log(`⏱️ Rate limiting: waiting ${delay}ms before next request`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-
-    // Queue requests to prevent concurrent API calls
-    if (requestQueue.current) {
-      await requestQueue.current.catch(() => {}); // Ignore errors from previous requests
-    }
-
-    const request = apiCall();
-    requestQueue.current = request;
-    lastRequestTime.current = Date.now();
-
-    return request;
-  }, []);
-
-  const handleApiResponse = useCallback((response: AvantLinkApiResponse) => {
-    const transformedProducts = transformAvantLinkProducts(response.products);
-    setProducts(transformedProducts);
-    setTotalResults(response.totalResults);
-    setCurrentPage(response.currentPage);
-    setError(null);
-  }, []);
-
-  const handleApiError = useCallback((err: any) => {
-    console.error('AvantLink API Error:', err);
-    setError(err.message || 'Failed to fetch products');
-    setProducts([]);
-    setTotalResults(0);
-  }, []);
-
-  const searchProducts = useCallback(async (params: ProductSearchParams) => {
+  const handleApiCall = useCallback(async (apiCall: () => Promise<any>) => {
     if (!isConfigured) {
-      setError('AvantLink API not configured. Please check your environment variables.');
+      setError('AvantLink API credentials not configured');
       return;
     }
 
@@ -95,105 +47,66 @@ export function useAvantLink(options: UseAvantLinkOptions = {}): UseAvantLinkRes
     setError(null);
 
     try {
-      const response = await withRateLimit(() => avantLinkService.searchProducts({
-        ...params,
-        resultsPerPage: params.resultsPerPage || resultsPerPage
-      }));
-      handleApiResponse(response);
-    } catch (err) {
-      handleApiError(err);
+      console.log('🚀 Making AvantLink API call...');
+      const result = await apiCall();
+      console.log('✅ API Response:', result);
+      
+      if (result && result.products) {
+        setProducts(result.products);
+        setTotalProducts(result.totalProducts || result.products.length);
+        setError(null);
+        console.log(`📦 Loaded ${result.products.length} products`);
+      } else {
+        console.warn('⚠️ No products in API response:', result);
+        setProducts([]);
+        setTotalProducts(0);
+        setError('No products found');
+      }
+    } catch (err: any) {
+      console.error('❌ AvantLink API Error:', err);
+      setError(err.message || 'Failed to fetch products');
+      setProducts([]);
+      setTotalProducts(0);
     } finally {
       setLoading(false);
     }
-  }, [isConfigured, resultsPerPage, handleApiResponse, handleApiError, withRateLimit]);
+  }, [isConfigured]);
 
-  const getPopularProducts = useCallback(async (category?: string) => {
-    if (!isConfigured) {
-      setError('AvantLink API not configured. Please check your environment variables.');
-      return;
-    }
+  const searchProducts = useCallback(async (params: {
+    searchTerm?: string;
+    onSaleOnly?: boolean;
+    merchantIds?: string[];
+    resultsPerPage?: number;
+  }) => {
+    console.log('🔍 Search Products called with params:', params);
+    await handleApiCall(() => avantLinkService.searchProducts(params));
+  }, [handleApiCall]);
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await withRateLimit(() => avantLinkService.getPopularProducts(category));
-      handleApiResponse(response);
-    } catch (err) {
-      handleApiError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [isConfigured, handleApiResponse, handleApiError, withRateLimit]);
-
-  const getSaleProducts = useCallback(async () => {
-    if (!isConfigured) {
-      setError('AvantLink API not configured. Please check your environment variables.');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await withRateLimit(() => avantLinkService.getSaleProducts());
-      handleApiResponse(response);
-    } catch (err) {
-      handleApiError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [isConfigured, handleApiResponse, handleApiError, withRateLimit]);
-
-  const getSaleProductsByMerchants = useCallback(async (merchantIds: string[], searchTerm = 'sale') => {
-    if (!isConfigured) {
-      setError('AvantLink API not configured. Please check your environment variables.');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await withRateLimit(() => avantLinkService.getSaleProductsByMerchants(merchantIds, searchTerm));
-      handleApiResponse(response);
-    } catch (err) {
-      handleApiError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [isConfigured, handleApiResponse, handleApiError, withRateLimit]);
+  const loadPopularProducts = useCallback(async () => {
+    console.log('🌟 Load Popular Products called');
+    await handleApiCall(() => avantLinkService.searchProducts({
+      searchTerm: 'outdoor gear',
+      onSaleOnly: true,
+      resultsPerPage: 20
+    }));
+  }, [handleApiCall]);
 
   const clearProducts = useCallback(() => {
+    console.log('🧹 Clearing products');
     setProducts([]);
-    setTotalResults(0);
-    setCurrentPage(1);
+    setTotalProducts(0);
     setError(null);
   }, []);
-
-  // Auto-fetch popular products on mount if configured
-  useEffect(() => {
-    if (autoFetch && isConfigured && products.length === 0) {
-      getPopularProducts();
-    }
-  }, [autoFetch, isConfigured, products.length, getPopularProducts]);
-
-  // Calculate if there's a next page
-  const hasNextPage = currentPage * resultsPerPage < totalResults;
 
   return {
     products,
     loading,
     error,
-    totalResults,
-    currentPage,
-    hasNextPage,
+    isConfigured,
+    totalProducts,
     searchProducts,
-    getPopularProducts,
-    getSaleProducts,
-    getSaleProductsByMerchants,
-    clearProducts,
-    isConfigured
+    loadPopularProducts,
+    clearProducts
   };
 }
 

@@ -7,17 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface BackfillRequest {
-  mode?: 'full_catalog' | 'test_batch' | 'test' | 'test_single'
-  batch_size?: number
-  max_products?: number
-  specific_skus?: string[]
-  resume?: boolean
-  skip_recent_hours?: number
-  test_skus?: string[]
-  test_sku?: string
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,392 +14,321 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🚀 Starting comprehensive price history backfill...')
-    
-    // Initialize Supabase client with service role key for database operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get AvantLink API credentials
     const affiliateId = Deno.env.get('AVANTLINK_AFFILIATE_ID')
     const apiKey = Deno.env.get('AVANTLINK_API_KEY')
-    
+
     if (!affiliateId || !apiKey) {
       throw new Error('Missing AvantLink API credentials')
     }
 
-    console.log(`✅ API credentials loaded: affiliate_id=${affiliateId}`)
-
-    const requestBody = await req.json() as BackfillRequest
-    const { 
-      mode = 'test', 
-      batch_size = 5, 
-      max_products = null, // Remove hard-coded limit
-      specific_skus = [],
-      resume = true,
-      skip_recent_hours = 24, // Skip products updated in last 24 hours
-      test_skus = [],
-      test_sku = ''
-    } = requestBody
-
-    console.log(`📊 Backfill configuration:`, { mode, batch_size, max_products, resume, skip_recent_hours })
-
-    // Test database connection first
-    console.log('🔗 Testing database connection...')
-    const { data: testData, error: testError } = await supabaseClient
-      .from('price_history')
-      .select('count')
-      .limit(1)
-    
-    if (testError) {
-      console.error('❌ Database connection failed:', testError)
-      throw new Error(`Database connection failed: ${testError.message}`)
-    }
-    
-    console.log('✅ Database connection successful')
-
-    // Fetch ALL products from database - ONLY merchant 18557 (MEC)
-    let query = supabaseClient
-      .from('products')
-      .select('sku, merchant_id, name, merchant_name')
-      .eq('merchant_id', 18557) // Only use valid merchant ID
-      .order('sku', { ascending: true })
-
-    if (mode === 'test_single' && test_sku) {
-      query = query.eq('sku', test_sku)
-    } else if (test_skus.length > 0) {
-      query = query.in('sku', test_skus)
-    } else if (specific_skus.length > 0) {
-      query = query.in('sku', specific_skus)
-    } else if (mode === 'test_batch') {
-      query = query.limit(10)
-    } else if (max_products) {
-      query = query.limit(max_products)
-    }
-    // Remove max_products limit to fetch ALL products by default
-
-    const { data: products, error: fetchError } = await query
-
-    if (fetchError) {
-      console.error('❌ Error fetching products:', fetchError)
-      throw fetchError
+    // Parse request parameters
+    let requestBody: any = {}
+    if (req.method === 'POST') {
+      try {
+        requestBody = await req.json()
+      } catch (error) {
+        // Ignore JSON parse errors for GET requests
+      }
     }
 
-    if (!products || products.length === 0) {
+    const batchSize = requestBody.batch_size || 10
+    const maxProducts = requestBody.max_products || null
+    const resume = requestBody.resume !== false // Default to true
+    const skipRecentHours = requestBody.skip_recent_hours || 24
+
+    console.log(`🚀 Starting comprehensive price backfill with resume=${resume}, batch_size=${batchSize}`)
+
+    // Initialize tracking table if resume is enabled
+    if (resume) {
+      console.log('📊 Populating SKU tracking table...')
+      const { data: populateResult, error: populateError } = await supabaseClient
+        .rpc('populate_sku_tracking')
+
+      if (populateError) {
+        console.error('❌ Failed to populate SKU tracking:', populateError)
+      } else {
+        console.log(`✅ Added ${populateResult?.[0]?.inserted_count || 0} new SKUs to tracking`)
+      }
+
+      // Cleanup stuck processing records
+      const { data: cleanupResult, error: cleanupError } = await supabaseClient
+        .rpc('cleanup_stuck_processing')
+
+      if (cleanupError) {
+        console.error('❌ Failed to cleanup stuck processing:', cleanupError)
+      } else {
+        console.log(`🧹 Reset ${cleanupResult?.[0]?.cleaned_count || 0} stuck processing records`)
+      }
+    }
+
+    // Get progress overview
+    const { data: progressData, error: progressError } = await supabaseClient
+      .from('price_sync_progress')
+      .select('*')
+      .single()
+
+    if (!progressError && progressData) {
+      console.log(`📈 Sync Progress: ${progressData.completed}/${progressData.total_skus} completed (${progressData.completion_percentage}%)`)
+      console.log(`📊 Status breakdown: Pending: ${progressData.pending}, Processing: ${progressData.processing}, Failed: ${progressData.failed}`)
+    }
+
+    let productsToProcess: any[] = []
+
+    if (resume) {
+      // Get pending SKUs from tracking table
+      const { data: pendingSKUs, error: skuError } = await supabaseClient
+        .from('sku_api_tracking')
+        .select('sku, merchant_id, api_call_count, last_api_call')
+        .eq('status', 'pending')
+        .order('api_call_count', { ascending: true }) // Process SKUs with fewer attempts first
+        .order('created_at', { ascending: true })
+        .limit(batchSize)
+
+      if (skuError) {
+        throw new Error(`Failed to fetch pending SKUs: ${skuError.message}`)
+      }
+
+      if (!pendingSKUs || pendingSKUs.length === 0) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'No pending SKUs found - all products have been processed',
+            processed_products: 0,
+            api_calls_used: 0,
+            progress_data: progressData
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        )
+      }
+
+      // Get product details for the pending SKUs
+      const skuList = pendingSKUs.map(item => item.sku)
+      const { data: productData, error: productError } = await supabaseClient
+        .from('products')
+        .select('sku, merchant_id, name')
+        .in('sku', skuList)
+
+      if (productError) {
+        throw new Error(`Failed to fetch product data: ${productError.message}`)
+      }
+
+      productsToProcess = productData || []
+      console.log(`📦 Found ${productsToProcess.length} products to process from tracking system`)
+
+    } else {
+      // Legacy mode: get products directly from products table
+      let query = supabaseClient
+        .from('products')
+        .select('sku, merchant_id, name, last_sync_date')
+        .eq('merchant_id', 18557) // Only process TCC products
+        .order('sku', { ascending: true })
+
+      if (maxProducts) {
+        query = query.limit(maxProducts)
+      }
+
+      const { data: productData, error: productError } = await query
+
+      if (productError) {
+        throw new Error(`Failed to fetch products: ${productError.message}`)
+      }
+
+      productsToProcess = productData || []
+      console.log(`📦 Found ${productsToProcess.length} products to process (legacy mode)`)
+    }
+
+    if (productsToProcess.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, message: 'No products found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          success: true,
+          message: 'No products found to process',
+          processed_products: 0,
+          api_calls_used: 0
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
       )
     }
 
-    console.log(`📦 Processing ${products.length} products for price history backfill`)
-
-    // Smart API optimization: Check which products need API calls
-    console.log(`🧠 Analyzing which products need API calls...`)
-    
-    const recentCutoff = new Date()
-    recentCutoff.setHours(recentCutoff.getHours() - skip_recent_hours)
-    
-    console.log(`📅 Recent cutoff: ${recentCutoff.toISOString()} (skip if newer, process if older)`)
-
-    // Get latest price history per product using optimized approach
-    console.log(`🔍 Checking existing price history using efficient query...`)
-    
-    // First, get all unique product SKUs that have price history
-    const { data: skusWithHistory, error: skuError } = await supabaseClient
-      .from('price_history')
-      .select('product_sku')
-      .eq('merchant_id', 18557)
-      .not('product_sku', 'is', null)
-    
-    if (skuError) {
-      console.log('⚠️ Warning: Could not check existing SKUs, proceeding with all products:', skuError.message)
-    }
-    
-    // Get latest created_at timestamp for products updated recently (for skip logic)
-    // Exclude placeholder records (price=0) from recent updates so they can be refreshed
-    const { data: recentUpdates, error: recentError } = await supabaseClient
-      .from('price_history')
-      .select('product_sku, created_at, price')
-      .eq('merchant_id', 18557)
-      .gte('created_at', recentCutoff.toISOString())
-      .neq('price', 0) // Exclude placeholder records from "recent" classification
-    
-    const priceHistoryStatus = recentUpdates
-    const statusError = recentError
-
-    if (statusError) {
-      console.log('⚠️ Warning: Could not check price history status, proceeding with all products:', statusError.message)
-    }
-
-    // Analyze which products need API calls using optimized logic
-    const productStatusMap = new Map<string, 'skip_recent' | 'needs_refresh' | 'missing'>()
-    
-    // Create sets for efficient lookup
-    const existingSkusSet = new Set(skusWithHistory?.map(item => item.product_sku) || [])
-    const recentlyUpdatedSkusSet = new Set(priceHistoryStatus?.map(item => item.product_sku) || [])
-    
-    console.log(`📊 Optimization Results:`)
-    console.log(`   Products with any price history: ${existingSkusSet.size}`)
-    console.log(`   Products updated in last 24 hours: ${recentlyUpdatedSkusSet.size}`)
-    
-    // Classify each product using simplified logic
-    products.forEach(product => {
-      if (!existingSkusSet.has(product.sku)) {
-        // No price history at all - needs API call
-        productStatusMap.set(product.sku, 'needs_processing')
-      } else if (recentlyUpdatedSkusSet.has(product.sku)) {
-        // Updated within last 24 hours - skip
-        productStatusMap.set(product.sku, 'skip_recent')
-      } else {
-        // Has price history but not updated in 24+ hours - needs API call
-        productStatusMap.set(product.sku, 'needs_processing')
-      }
-    })
-    
-    const skipCount = Array.from(productStatusMap.values()).filter(status => status === 'skip_recent').length
-    const processCount = Array.from(productStatusMap.values()).filter(status => status === 'needs_processing').length
-    
-    console.log(`📊 API Call Analysis:`)
-    console.log(`   - Skip (updated in last 24h): ${skipCount} products`)
-    console.log(`   - Process (missing or 24h+ old): ${processCount} products`)
-    console.log(`   - Total API calls needed: ${processCount}`)
-    console.log(`   - API calls saved: ${skipCount}`)
-    
-    // Calculate real completion percentage
-    const totalMecProducts = products.length // Now fetches ALL products
-    const productsWithHistory = existingSkusSet.size
-    const productsWithoutHistory = processCount - (processCount - products.filter(p => !existingSkusSet.has(p.sku)).length)
-    const completionPercent = Math.round((productsWithHistory / totalMecProducts) * 100)
-    
-    console.log(`\n🎯 REAL COMPLETION STATUS:`)
-    console.log(`   Total MEC Products: ${totalMecProducts}`)
-    console.log(`   Products WITH price history: ${productsWithHistory}`)
-    console.log(`   Products needing processing: ${processCount}`)
-    console.log(`   Completion: ${completionPercent}%`)
-    
-    // Filter products to ONLY those that need API calls BEFORE batching
-    const productsNeedingWork = products.filter(product => {
-      const status = productStatusMap.get(product.sku)
-      return status === 'needs_processing'
-    })
-
-    console.log(`\n🚀 FILTERED PROCESSING: ${productsNeedingWork.length} products need API calls`)
-    console.log(`📊 Efficiency: ${products.length - productsNeedingWork.length} products pre-filtered (won't waste time processing)`)
-
-    let totalProcessed = 0
-    let totalSuccessful = 0
-    let totalSkipped = skipCount // Pre-set to skip count since we filtered them out
     let totalApiCalls = 0
-    let totalPriceRecords = 0
-    const errors: any[] = []
+    let totalHistoryEntries = 0
+    let processedProducts = 0
+    let failedProducts = 0
+    const startTime = Date.now()
 
-    // Process ONLY products that need work in batches
-    for (let i = 0; i < productsNeedingWork.length; i += batch_size) {
+    // Process each product
+    for (const product of productsToProcess) {
       try {
-        const batch = productsNeedingWork.slice(i, i + batch_size)
-        
-        const currentBatch = Math.floor(i / batch_size) + 1
-        const totalWorkBatches = Math.ceil(productsNeedingWork.length / batch_size)
-        const apiProgress = totalApiCalls
-        const apiNeeded = processCount
-        const currentCompletion = Math.round(((productsWithHistory + totalSuccessful) / totalMecProducts) * 100)
-        
-        console.log(`\n🔄 Work Batch ${currentBatch}/${totalWorkBatches} | Completion: ${currentCompletion}% | API: ${apiProgress}/${apiNeeded} | All ${batch.length} products need API calls`)
-        
-        // Add memory and progress monitoring to debug batch 17 failures
-        if (typeof Deno !== 'undefined' && Deno.memoryUsage) {
-          const memory = Deno.memoryUsage()
-          console.log(`💾 Memory: ${Math.round(memory.heapUsed / 1024 / 1024)}MB heap, ${Math.round(memory.external / 1024 / 1024)}MB external`)
-        }
-        
-        // Add batch-level error handling
-        if (currentBatch >= 15) {
-          console.log(`🔍 Debug: Approaching problematic batch area (batch ${currentBatch})`)
+        console.log(`🔄 Processing ${product.sku} (${product.name})`)
+
+        // Mark as processing in tracking table (if using resume mode)
+        if (resume) {
+          await supabaseClient
+            .from('sku_api_tracking')
+            .update({
+              status: 'processing',
+              last_api_call: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('sku', product.sku)
+            .eq('merchant_id', product.merchant_id)
         }
 
-      // Process each product in the batch (all need API calls)
-      for (const product of batch) {
-        try {
-          const productStatus = productStatusMap.get(product.sku)
+        // Build AvantLink API URL
+        const apiUrl = new URL('https://classic.avantlink.com/api.php')
+        apiUrl.searchParams.set('module', 'ProductPriceCheck')
+        apiUrl.searchParams.set('affiliate_id', affiliateId)
+        apiUrl.searchParams.set('merchant_id', product.merchant_id.toString())
+        apiUrl.searchParams.set('sku', product.sku)
+        apiUrl.searchParams.set('show_pricing_history', '1')
+        apiUrl.searchParams.set('show_retail_price', '1')
+        apiUrl.searchParams.set('output', 'xml')
+
+        const response = await fetch(apiUrl.toString())
+        totalApiCalls++
+
+        if (!response.ok) {
+          throw new Error(`AvantLink API error: ${response.status} ${response.statusText}`)
+        }
+
+        const xmlText = await response.text()
+        console.log(`📥 XML Response preview for ${product.sku}:`, xmlText.substring(0, 200))
+
+        // Parse XML to extract price history
+        const priceHistoryData = parseAvantLinkXML(xmlText)
+        
+        if (priceHistoryData && priceHistoryData.length > 0) {
+          const historyEntries: any[] = []
           
-          const reason = !skusWithHistory?.some(item => item.product_sku === product.sku) ? 
-                        'no price history' : 
-                        `stale data (>24h old)`
-          
-          console.log(`📡 Fetching price history for ${product.sku} (${reason})`)
-          
-          // Call AvantLink ProductPriceCheck API with XML output
-          const apiUrl = 'https://classic.avantlink.com/api.php?' + new URLSearchParams({
-            module: 'ProductPriceCheck',
-            affiliate_id: affiliateId,
-            merchant_id: '18557', // Use hardcoded valid merchant ID
-            sku: product.sku,
-            show_pricing_history: '1', // Must be '1' not 'true'
-            show_retail_price: '1',
-            output: 'xml'
-          }).toString()
-
-          console.log(`🌐 API URL: ${apiUrl}`)
-
-          const response = await fetch(apiUrl)
-          totalApiCalls++
-
-          if (!response.ok) {
-            console.error(`❌ API call failed for ${product.sku}: ${response.status} ${response.statusText}`)
-            errors.push({ sku: product.sku, error: `API call failed: ${response.status}` })
-            continue
-          }
-
-          const xmlText = await response.text()
-          console.log(`📄 Received XML response for ${product.sku} (${xmlText.length} chars)`)
-          
-          // Log the API URL and first part of XML for debugging
-          console.log(`🌐 API URL: ${apiUrl}`)
-          if (xmlText.includes('<error>')) {
-            console.log(`📄 Full XML: ${xmlText}`)
-          }
-
-          // Log first 200 characters for debugging
-          if (xmlText.length > 200) {
-            console.log(`📄 XML preview: ${xmlText.substring(0, 200)}...`)
-          } else {
-            console.log(`📄 Full XML: ${xmlText}`)
-          }
-
-          // Parse XML price history
-          const priceHistory = parseXMLPriceHistory(xmlText)
-          console.log(`📈 Parsed ${priceHistory.length} price history entries for ${product.sku}`)
-
-          if (priceHistory.length === 0) {
-            console.log(`📝 No price history from AvantLink for ${product.sku} - inserting placeholder to prevent re-checking`)
-            
-            // Insert placeholder record to mark this product as "checked but no data available"
-            try {
-              const { error: placeholderError } = await supabaseClient
-                .from('price_history')
-                .upsert({
-                  product_sku: product.sku,
-                  merchant_id: 18557,
-                  price: 0, // Placeholder price
-                  is_sale: false,
-                  discount_percent: 0,
-                  recorded_date: new Date().toISOString().split('T')[0] // Today's date
-                }, {
-                  onConflict: 'product_sku,merchant_id,recorded_date'
-                })
-
-              if (placeholderError) {
-                console.error(`❌ Error inserting placeholder for ${product.sku}:`, placeholderError)
-                errors.push({ sku: product.sku, error: `Placeholder insert failed: ${placeholderError.message}` })
-              } else {
-                console.log(`✅ Placeholder inserted for ${product.sku} - won't be checked again`)
-                totalPriceRecords++
-              }
-            } catch (placeholderException) {
-              console.error(`💥 Exception inserting placeholder for ${product.sku}:`, placeholderException)
-              errors.push({ sku: product.sku, error: `Placeholder exception: ${placeholderException.message}` })
-            }
-            
-            totalSuccessful++
-            totalProcessed++
-            continue
-          }
-
-          // Insert price history records - FIXED: removed non-existent data_source column
-          for (const record of priceHistory) {
-            try {
-              console.log(`💾 Inserting price record: ${product.sku} - $${record.price} on ${record.date}`)
+          for (const historyItem of priceHistoryData) {
+            if (historyItem.sale_price && historyItem.date) {
+              const salePrice = parseFloat(historyItem.sale_price)
+              const retailPrice = parseFloat(historyItem.retail_price)
+              const recordDate = new Date(historyItem.date).toISOString().split('T')[0]
               
-              const { error: insertError } = await supabaseClient
-                .from('price_history')
-                .upsert({
-                  product_sku: product.sku,
-                  merchant_id: 18557, // Use hardcoded valid merchant ID
-                  price: record.price,
-                  is_sale: record.is_sale,
-                  discount_percent: record.discount_percent,
-                  recorded_date: record.date
-                }, {
-                  onConflict: 'product_sku,merchant_id,recorded_date'
-                })
+              const isSale = salePrice < retailPrice
+              const discountPercent = isSale 
+                ? Math.round(((retailPrice - salePrice) / retailPrice) * 100)
+                : 0
 
-              if (insertError) {
-                console.error(`❌ Error inserting price history for ${product.sku}:`, insertError)
-                errors.push({ sku: product.sku, error: insertError.message })
-              } else {
-                totalPriceRecords++
-                console.log(`✅ Successfully inserted price record for ${product.sku}`)
-              }
-            } catch (insertException) {
-              console.error(`💥 Exception inserting price history for ${product.sku}:`, insertException)
-              errors.push({ sku: product.sku, error: insertException.message })
+              historyEntries.push({
+                product_sku: product.sku,
+                merchant_id: product.merchant_id,
+                price: salePrice,
+                is_sale: isSale,
+                discount_percent: discountPercent,
+                recorded_date: recordDate
+              })
             }
           }
 
-          totalSuccessful++
-          console.log(`✅ Successfully processed ${product.sku} - ${priceHistory.length} records | API: ${totalApiCalls}/${processCount}`)
+          // Insert price history entries
+          if (historyEntries.length > 0) {
+            const { error: historyError } = await supabaseClient
+              .from('price_history')
+              .upsert(historyEntries, {
+                onConflict: 'product_sku,merchant_id,recorded_date'
+              })
 
-        } catch (error) {
-          console.error(`💥 Error processing ${product.sku}:`, error)
-          errors.push({ sku: product.sku, error: error.message })
+            if (historyError) {
+              console.error(`❌ Failed to insert price history for ${product.sku}:`, historyError.message)
+              throw historyError
+            }
+
+            totalHistoryEntries += historyEntries.length
+            console.log(`✅ Added ${historyEntries.length} price history entries for ${product.sku}`)
+          }
+
+          // Mark as completed in tracking table
+          if (resume) {
+            await supabaseClient
+              .from('sku_api_tracking')
+              .update({
+                status: 'completed',
+                last_successful_call: new Date().toISOString(),
+                api_call_count: supabaseClient.from('sku_api_tracking').select('api_call_count').eq('sku', product.sku).eq('merchant_id', product.merchant_id).single().then(r => (r.data?.api_call_count || 0) + 1),
+                updated_at: new Date().toISOString()
+              })
+              .eq('sku', product.sku)
+              .eq('merchant_id', product.merchant_id)
+          }
+
+          processedProducts++
+
+        } else {
+          console.log(`ℹ️  No pricing history available for ${product.sku}`)
+          
+          // Mark as no_data in tracking table
+          if (resume) {
+            await supabaseClient
+              .from('sku_api_tracking')
+              .update({
+                status: 'no_data',
+                last_successful_call: new Date().toISOString(),
+                api_call_count: supabaseClient.from('sku_api_tracking').select('api_call_count').eq('sku', product.sku).eq('merchant_id', product.merchant_id).single().then(r => (r.data?.api_call_count || 0) + 1),
+                updated_at: new Date().toISOString()
+              })
+              .eq('sku', product.sku)
+              .eq('merchant_id', product.merchant_id)
+          }
+
+          processedProducts++
         }
 
-        totalProcessed++
+        // Rate limiting: delay between requests
+        await new Promise(resolve => setTimeout(resolve, 200))
 
-        // Small delay to respect API rate limits
-        await new Promise(resolve => setTimeout(resolve, 500))
-      }
-
-        // Longer delay between batches
-        if (i + batch_size < productsNeedingWork.length) {
-          console.log('⏱️ Pausing between batches...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
+      } catch (error) {
+        console.error(`❌ Error processing ${product.sku}:`, error)
+        
+        // Mark as failed in tracking table
+        if (resume) {
+          await supabaseClient
+            .from('sku_api_tracking')
+            .update({
+              status: 'failed',
+              error_message: error.message,
+              api_call_count: supabaseClient.from('sku_api_tracking').select('api_call_count').eq('sku', product.sku).eq('merchant_id', product.merchant_id).single().then(r => (r.data?.api_call_count || 0) + 1),
+              updated_at: new Date().toISOString()
+            })
+            .eq('sku', product.sku)
+            .eq('merchant_id', product.merchant_id)
         }
-        
-      } catch (batchError) {
-        console.error(`💥 Batch ${Math.floor(i / batch_size) + 1} failed:`, batchError)
-        const currentBatch = Math.floor(i / batch_size) + 1
-        errors.push({ batch: currentBatch, error: batchError.message })
-        
-        // Continue with next batch instead of failing completely
-        console.log(`🔄 Continuing to next batch after error in batch ${currentBatch}`)
+
+        failedProducts++
       }
     }
 
-    // Final summary
-    console.log(`\n🎉 Backfill completed!`)
-    console.log(`📊 Summary:`)
-    console.log(`   - Total products processed: ${totalProcessed}`)
-    console.log(`   - Successful: ${totalSuccessful}`)
-    console.log(`   - Skipped (recently synced): ${totalSkipped}`)
-    console.log(`   - Errors: ${errors.length}`)
-    console.log(`   - API calls made: ${totalApiCalls}`)
-    console.log(`   - Price records created: ${totalPriceRecords}`)
+    const processingTime = Date.now() - startTime
 
-    // Verify data was inserted
-    const { count: finalCount } = await supabaseClient
-      .from('price_history')
-      .select('*', { count: 'exact', head: true })
-    
-    console.log(`📊 Final database count: ${finalCount} price history records`)
+    // Get final progress overview
+    const { data: finalProgressData } = await supabaseClient
+      .from('price_sync_progress')
+      .select('*')
+      .single()
 
     return new Response(
       JSON.stringify({
         success: true,
-        summary: {
-          total_processed: totalProcessed,
-          successful: totalSuccessful,
-          skipped: totalSkipped,
-          errors: errors.length,
-          api_calls_used: totalApiCalls,
-          price_records_created: totalPriceRecords,
-          final_database_count: finalCount
-        },
-        errors: errors.slice(0, 10) // Limit error details to prevent huge responses
-      }, null, 2),
+        processed_products: processedProducts,
+        failed_products: failedProducts,
+        price_history_entries: totalHistoryEntries,
+        api_calls_used: totalApiCalls,
+        processing_time_ms: processingTime,
+        avg_time_per_product_ms: Math.round(processingTime / Math.max(1, processedProducts)),
+        progress_data: finalProgressData,
+        resume_enabled: resume
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -418,13 +336,12 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('💥 Comprehensive backfill failed:', error)
+    console.error('💥 Comprehensive price backfill error:', error)
     
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
-        stack: error.stack
+        error: error.message
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -434,75 +351,36 @@ serve(async (req) => {
   }
 })
 
-/**
- * Parse XML price history from AvantLink API response - IMPROVED VERSION
- */
-function parseXMLPriceHistory(xmlText: string): any[] {
-  const priceHistory: any[] = []
-  
+// XML parsing function for AvantLink ProductPriceCheck response
+function parseAvantLinkXML(xmlText: string): Array<{date: string, retail_price: string, sale_price: string}> {
   try {
-    // Handle different types of responses
-    if (xmlText.includes('No pricing history found') || xmlText.includes('Error:') || xmlText.length < 200) {
-      console.log('⚠️ XML indicates no pricing history or error response')
-      return []
-    }
-
-    // Extract Table1 entries using regex
+    const priceHistory: Array<{date: string, retail_price: string, sale_price: string}> = []
+    
+    // Basic XML parsing - look for Table1 entries
     const table1Regex = /<Table1>(.*?)<\/Table1>/gs
     let match
     
     while ((match = table1Regex.exec(xmlText)) !== null) {
       const tableContent = match[1]
       
-      // Extract individual fields
+      // Extract date, retail_price, and sale_price
       const dateMatch = tableContent.match(/<Date>(.*?)<\/Date>/)
       const retailPriceMatch = tableContent.match(/<Retail_Price>(.*?)<\/Retail_Price>/)
       const salePriceMatch = tableContent.match(/<Sale_Price>(.*?)<\/Sale_Price>/)
       
       if (dateMatch && retailPriceMatch && salePriceMatch) {
-        const dateStr = dateMatch[1].trim()
-        const retailPriceStr = retailPriceMatch[1].trim()
-        const salePriceStr = salePriceMatch[1].trim()
-        
-        // Validate numeric values
-        const retailPrice = parseFloat(retailPriceStr)
-        const salePrice = parseFloat(salePriceStr)
-        
-        if (isNaN(retailPrice) || isNaN(salePrice) || retailPrice <= 0 || salePrice <= 0) {
-          console.log(`⚠️ Skipping invalid price data: retail=${retailPriceStr}, sale=${salePriceStr}`)
-          continue
-        }
-        
-        // Parse date (format: "2025-01-22 11:15:06" -> "2025-01-22")
-        const recordedDate = dateStr.split(' ')[0]
-        
-        // Validate date format
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(recordedDate)) {
-          console.log(`⚠️ Skipping invalid date format: ${dateStr}`)
-          continue
-        }
-        
-        // Determine if it's a sale and calculate discount
-        const isSale = salePrice < retailPrice
-        const discountPercent = isSale ? Math.round(((retailPrice - salePrice) / retailPrice) * 100) : 0
-        
         priceHistory.push({
-          date: recordedDate,
-          price: salePrice, // Use sale price as the actual price
-          is_sale: isSale,
-          discount_percent: discountPercent
+          date: dateMatch[1].trim(),
+          retail_price: retailPriceMatch[1].trim(),
+          sale_price: salePriceMatch[1].trim()
         })
       }
     }
     
-    // Sort by date (oldest first)
-    priceHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    
-    console.log(`📈 Successfully parsed ${priceHistory.length} valid price entries`)
-    
+    console.log(`📊 Parsed ${priceHistory.length} price history entries from XML`)
+    return priceHistory
   } catch (error) {
     console.error('❌ Error parsing XML:', error)
+    return []
   }
-  
-  return priceHistory
 }

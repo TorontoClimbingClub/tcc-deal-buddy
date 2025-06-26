@@ -141,6 +141,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sku_api_tracking: {
+        Row: {
+          api_call_count: number | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          last_api_call: string | null
+          last_successful_call: string | null
+          merchant_id: number
+          sku: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_call_count?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_api_call?: string | null
+          last_successful_call?: string | null
+          merchant_id: number
+          sku: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_call_count?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_api_call?: string | null
+          last_successful_call?: string | null
+          merchant_id?: number
+          sku?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       sync_jobs: {
         Row: {
           api_calls_used: number | null
@@ -341,6 +380,30 @@ export type Database = {
         }
         Relationships: []
       }
+      price_sync_progress: {
+        Row: {
+          completed: number | null
+          completion_percentage: number | null
+          failed: number | null
+          last_activity: string | null
+          no_data: number | null
+          pending: number | null
+          processing: number | null
+          total_api_calls_made: number | null
+          total_skus: number | null
+        }
+        Relationships: []
+      }
+      sync_activity_status: {
+        Row: {
+          avg_api_calls: number | null
+          count: number | null
+          newest_attempt: string | null
+          oldest_attempt: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
       user_cart_summary: {
         Row: {
           cart_total: number | null
@@ -353,7 +416,24 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      cleanup_stuck_processing: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cleaned_count: number
+        }[]
+      }
+      populate_sku_tracking: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          inserted_count: number
+        }[]
+      }
+      reset_failed_skus: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          reset_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

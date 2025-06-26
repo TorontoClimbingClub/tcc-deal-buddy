@@ -54,6 +54,8 @@ export function useProducts(): UseProductsResult {
 
   const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => ({
     id: dbProduct.sku, // Use SKU as ID for compatibility
+    sku: dbProduct.sku,
+    merchant_id: dbProduct.merchant_id,
     name: dbProduct.name,
     description: dbProduct.description || '',
     price: dbProduct.sale_price || dbProduct.retail_price || 0,

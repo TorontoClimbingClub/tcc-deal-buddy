@@ -102,6 +102,13 @@ export function transformAvantLinkProduct(avantLinkProduct: any): Product {
                     sanitized.lngProductId ||
                     `${sanitized['Merchant Name'] || sanitized.strMerchantName}-${sanitized['Product SKU'] || sanitized.strProductSKU}`.replace(/\s+/g, '-');
 
+  // Get SKU and merchant info
+  const productSku = sanitized['Product SKU'] || sanitized.strProductSKU || productId.toString();
+  const merchantName = sanitized['Merchant Name'] || sanitized.strMerchantName || 'Unknown Merchant';
+  
+  // For AvantLink products, we'll use a default merchant_id of 0 since we don't have actual merchant IDs
+  const merchantId = 0;
+
   // Validate affiliate URL
   let affiliateUrl = sanitized['Buy URL'] || sanitized.strBuyURL || sanitized['Product URL'] || sanitized.strProductURL || '#';
   if (affiliateUrl !== '#') {
@@ -117,13 +124,15 @@ export function transformAvantLinkProduct(avantLinkProduct: any): Product {
 
   return {
     id: productId.toString(),
+    sku: productSku,
+    merchant_id: merchantId,
     name: sanitized['Product Name'] || sanitized.strProductName || 'Unnamed Product',
     description: cleanDescription(description),
     price: currentPrice,
     originalPrice,
     imageUrl,
     affiliateUrl,
-    merchant: sanitized['Merchant Name'] || sanitized.strMerchantName || 'Unknown Merchant',
+    merchant: merchantName,
     category: sanitized['Category Name'] || sanitized.strCategoryName || sanitized['Department Name'] || sanitized.strDepartmentName || 'General',
     discount: discountPercent > 0 ? Math.round(discountPercent) : undefined,
     rating: undefined // AvantLink doesn't provide ratings, could be enhanced later

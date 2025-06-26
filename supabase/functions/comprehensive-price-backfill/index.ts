@@ -12,6 +12,8 @@ interface BackfillRequest {
   batch_size?: number
   max_products?: number
   specific_skus?: string[]
+  resume?: boolean
+  skip_recent_hours?: number
 }
 
 serve(async (req) => {
@@ -41,25 +43,27 @@ serve(async (req) => {
     const { 
       mode = 'full_catalog', 
       batch_size = 5, 
-      max_products = 2184,
-      specific_skus = []
+      max_products = null, // Remove hard-coded limit
+      specific_skus = [],
+      resume = true,
+      skip_recent_hours = 24 // Skip products updated in last 24 hours
     } = requestBody
 
-    console.log(`📊 Backfill configuration:`, { mode, batch_size, max_products })
+    console.log(`📊 Backfill configuration:`, { mode, batch_size, max_products, resume, skip_recent_hours })
 
-    // Fetch all products from database
+    // Fetch ALL products from database - ONLY merchant 18557 (MEC)
     let query = supabaseClient
       .from('products')
       .select('sku, merchant_id, name, merchant_name')
-      .order('merchant_id', { ascending: true })
+      .eq('merchant_id', 18557) // Only use valid merchant ID
+      .order('sku', { ascending: true })
 
     if (specific_skus.length > 0) {
       query = query.in('sku', specific_skus)
     } else if (mode === 'test_batch') {
       query = query.limit(10)
-    } else {
-      query = query.limit(max_products)
     }
+    // Remove max_products limit to fetch ALL products
 
     const { data: products, error: fetchError } = await query
 
@@ -77,30 +81,149 @@ serve(async (req) => {
 
     console.log(`📦 Processing ${products.length} products for price history backfill`)
 
+    // Smart API optimization: Check which products need API calls
+    console.log(`🧠 Analyzing which products need API calls...`)
+    
+    const recentCutoff = new Date()
+    recentCutoff.setHours(recentCutoff.getHours() - skip_recent_hours)
+    
+    console.log(`📅 Recent cutoff: ${recentCutoff.toISOString()} (skip if newer, process if older)`)
+
+    // Get latest price history per product using optimized approach
+    console.log(`🔍 Checking existing price history using efficient query...`)
+    
+    // First, get all unique product SKUs that have price history
+    const { data: skusWithHistory, error: skuError } = await supabaseClient
+      .from('price_history')
+      .select('product_sku')
+      .eq('merchant_id', 18557)
+      .not('product_sku', 'is', null)
+    
+    if (skuError) {
+      console.log('⚠️ Warning: Could not check existing SKUs, proceeding with all products:', skuError.message)
+    }
+    
+    // Get latest created_at timestamp for products updated recently (for skip logic)
+    // Exclude placeholder records (price=0) from recent updates so they can be refreshed
+    const { data: recentUpdates, error: recentError } = await supabaseClient
+      .from('price_history')
+      .select('product_sku, created_at, price')
+      .eq('merchant_id', 18557)
+      .gte('created_at', recentCutoff.toISOString())
+      .neq('price', 0) // Exclude placeholder records from "recent" classification
+    
+    const priceHistoryStatus = recentUpdates
+    const statusError = recentError
+
+    if (statusError) {
+      console.log('⚠️ Warning: Could not check price history status, proceeding with all products:', statusError.message)
+    }
+
+    // Analyze which products need API calls using optimized logic
+    const productStatusMap = new Map<string, 'skip_recent' | 'needs_refresh' | 'missing'>()
+    
+    // Create sets for efficient lookup
+    const existingSkusSet = new Set(skusWithHistory?.map(item => item.product_sku) || [])
+    const recentlyUpdatedSkusSet = new Set(priceHistoryStatus?.map(item => item.product_sku) || [])
+    
+    console.log(`📊 Optimization Results:`)
+    console.log(`   Products with any price history: ${existingSkusSet.size}`)
+    console.log(`   Products updated in last 24 hours: ${recentlyUpdatedSkusSet.size}`)
+    
+    // Classify each product using simplified logic
+    products.forEach(product => {
+      if (!existingSkusSet.has(product.sku)) {
+        // No price history at all - needs API call
+        productStatusMap.set(product.sku, 'needs_processing')
+      } else if (recentlyUpdatedSkusSet.has(product.sku)) {
+        // Updated within last 24 hours - skip
+        productStatusMap.set(product.sku, 'skip_recent')
+      } else {
+        // Has price history but not updated in 24+ hours - needs API call
+        productStatusMap.set(product.sku, 'needs_processing')
+      }
+    })
+    
+    const skipCount = Array.from(productStatusMap.values()).filter(status => status === 'skip_recent').length
+    const processCount = Array.from(productStatusMap.values()).filter(status => status === 'needs_processing').length
+    
+    console.log(`📊 API Call Analysis:`)
+    console.log(`   - Skip (updated in last 24h): ${skipCount} products`)
+    console.log(`   - Process (missing or 24h+ old): ${processCount} products`)
+    console.log(`   - Total API calls needed: ${processCount}`)
+    console.log(`   - API calls saved: ${skipCount}`)
+    
+    // Calculate real completion percentage
+    const totalMecProducts = products.length // Now fetches ALL products
+    const productsWithHistory = existingSkusSet.size
+    const productsWithoutHistory = processCount - (processCount - products.filter(p => !existingSkusSet.has(p.sku)).length)
+    const completionPercent = Math.round((productsWithHistory / totalMecProducts) * 100)
+    
+    console.log(`\n🎯 REAL COMPLETION STATUS:`)
+    console.log(`   Total MEC Products: ${totalMecProducts}`)
+    console.log(`   Products WITH price history: ${productsWithHistory}`)
+    console.log(`   Products needing processing: ${processCount}`)
+    console.log(`   Completion: ${completionPercent}%`)
+    
+    // Filter products to ONLY those that need API calls BEFORE batching
+    const productsNeedingWork = products.filter(product => {
+      const status = productStatusMap.get(product.sku)
+      return status === 'needs_processing'
+    })
+
+    console.log(`\n🚀 FILTERED PROCESSING: ${productsNeedingWork.length} products need API calls`)
+    console.log(`📊 Efficiency: ${products.length - productsNeedingWork.length} products pre-filtered (won't waste time processing)`)
+
     let totalProcessed = 0
     let totalSuccessful = 0
+    let totalSkipped = skipCount // Pre-set to skip count since we filtered them out
     let totalApiCalls = 0
     let totalPriceRecords = 0
     const errors: any[] = []
 
-    // Process products in batches
-    for (let i = 0; i < products.length; i += batch_size) {
-      const batch = products.slice(i, i + batch_size)
-      console.log(`\n🔄 Processing batch ${Math.floor(i / batch_size) + 1}/${Math.ceil(products.length / batch_size)}`)
+    // Process ONLY products that need work in batches
+    for (let i = 0; i < productsNeedingWork.length; i += batch_size) {
+      try {
+        const batch = productsNeedingWork.slice(i, i + batch_size)
+        
+        const currentBatch = Math.floor(i / batch_size) + 1
+        const totalWorkBatches = Math.ceil(productsNeedingWork.length / batch_size)
+        const apiProgress = totalApiCalls
+        const apiNeeded = processCount
+        const currentCompletion = Math.round(((productsWithHistory + totalSuccessful) / totalMecProducts) * 100)
+        
+        console.log(`\n🔄 Work Batch ${currentBatch}/${totalWorkBatches} | Completion: ${currentCompletion}% | API: ${apiProgress}/${apiNeeded} | All ${batch.length} products need API calls`)
+        
+        // Add memory and progress monitoring to debug batch 17 failures
+        if (typeof Deno !== 'undefined' && Deno.memoryUsage) {
+          const memory = Deno.memoryUsage()
+          console.log(`💾 Memory: ${Math.round(memory.heapUsed / 1024 / 1024)}MB heap, ${Math.round(memory.external / 1024 / 1024)}MB external`)
+        }
+        
+        // Add batch-level error handling
+        if (currentBatch >= 15) {
+          console.log(`🔍 Debug: Approaching problematic batch area (batch ${currentBatch})`)
+        }
 
-      // Process each product in the batch
+      // Process each product in the batch (all need API calls)
       for (const product of batch) {
         try {
-          console.log(`📡 Fetching price history for ${product.sku} (${product.merchant_name})`)
+          const productStatus = productStatusMap.get(product.sku)
+          
+          const reason = !skusWithHistory?.some(item => item.product_sku === product.sku) ? 
+                        'no price history' : 
+                        `stale data (>24h old)`
+          
+          console.log(`📡 Fetching price history for ${product.sku} (${reason})`)
           
           // Call AvantLink ProductPriceCheck API with XML output
           const apiUrl = 'https://classic.avantlink.com/api.php?' + new URLSearchParams({
             module: 'ProductPriceCheck',
             affiliate_id: affiliateId,
-            merchant_id: product.merchant_id.toString(),
+            merchant_id: '18557', // Use hardcoded valid merchant ID
             sku: product.sku,
-            show_pricing_history: 'true',
-            show_retail_price: 'true',
+            show_pricing_history: '1', // Must be '1' not 'true'
+            show_retail_price: '1',
             output: 'xml'
           }).toString()
 
@@ -115,13 +238,49 @@ serve(async (req) => {
 
           const xmlText = await response.text()
           console.log(`📄 Received XML response for ${product.sku} (${xmlText.length} chars)`)
+          
+          // Log the API URL and first part of XML for debugging
+          console.log(`🌐 API URL: ${apiUrl}`)
+          if (xmlText.includes('<error>')) {
+            console.log(`📄 Full XML: ${xmlText}`)
+          }
 
           // Parse XML price history
           const priceHistory = parseXMLPriceHistory(xmlText)
           console.log(`📈 Parsed ${priceHistory.length} price history entries for ${product.sku}`)
 
           if (priceHistory.length === 0) {
-            console.log(`⚠️ No price history found for ${product.sku}`)
+            console.log(`📝 No price history from AvantLink for ${product.sku} - inserting placeholder to prevent re-checking`)
+            
+            // Insert placeholder record to mark this product as "checked but no data available"
+            try {
+              const { error: placeholderError } = await supabaseClient
+                .from('price_history')
+                .upsert({
+                  product_sku: product.sku,
+                  merchant_id: 18557,
+                  price: 0, // Placeholder price
+                  is_sale: false,
+                  discount_percent: 0,
+                  recorded_date: new Date().toISOString().split('T')[0] // Today's date
+                }, {
+                  onConflict: 'product_sku,merchant_id,recorded_date'
+                })
+
+              if (placeholderError) {
+                console.error(`❌ Error inserting placeholder for ${product.sku}:`, placeholderError)
+                errors.push({ sku: product.sku, error: `Placeholder insert failed: ${placeholderError.message}` })
+              } else {
+                console.log(`✅ Placeholder inserted for ${product.sku} - won't be checked again`)
+                totalPriceRecords++
+              }
+            } catch (placeholderException) {
+              console.error(`💥 Exception inserting placeholder for ${product.sku}:`, placeholderException)
+              errors.push({ sku: product.sku, error: `Placeholder exception: ${placeholderException.message}` })
+            }
+            
+            totalSuccessful++
+            totalProcessed++
             continue
           }
 
@@ -132,12 +291,11 @@ serve(async (req) => {
                 .from('price_history')
                 .upsert({
                   product_sku: product.sku,
-                  merchant_id: product.merchant_id,
+                  merchant_id: 18557, // Use hardcoded valid merchant ID
                   price: record.price,
                   is_sale: record.is_sale,
                   discount_percent: record.discount_percent,
-                  recorded_date: record.date,
-                  data_source: 'avantlink_backfill'
+                  recorded_date: record.date
                 }, {
                   onConflict: 'product_sku,merchant_id,recorded_date'
                 })
@@ -155,7 +313,7 @@ serve(async (req) => {
           }
 
           totalSuccessful++
-          console.log(`✅ Successfully processed ${product.sku} - ${priceHistory.length} records`)
+          console.log(`✅ Successfully processed ${product.sku} - ${priceHistory.length} records | API: ${totalApiCalls}/${processCount}`)
 
         } catch (error) {
           console.error(`💥 Error processing ${product.sku}:`, error)
@@ -168,10 +326,19 @@ serve(async (req) => {
         await new Promise(resolve => setTimeout(resolve, 500))
       }
 
-      // Longer delay between batches
-      if (i + batch_size < products.length) {
-        console.log('⏱️ Pausing between batches...')
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Longer delay between batches
+        if (i + batch_size < productsNeedingWork.length) {
+          console.log('⏱️ Pausing between batches...')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+        
+      } catch (batchError) {
+        console.error(`💥 Batch ${Math.floor(i / batch_size) + 1} failed:`, batchError)
+        const currentBatch = Math.floor(i / batch_size) + 1
+        errors.push({ batch: currentBatch, error: batchError.message })
+        
+        // Continue with next batch instead of failing completely
+        console.log(`🔄 Continuing to next batch after error in batch ${currentBatch}`)
       }
     }
 
@@ -180,6 +347,7 @@ serve(async (req) => {
     console.log(`📊 Summary:`)
     console.log(`   - Total products processed: ${totalProcessed}`)
     console.log(`   - Successful: ${totalSuccessful}`)
+    console.log(`   - Skipped (recently synced): ${totalSkipped}`)
     console.log(`   - Errors: ${errors.length}`)
     console.log(`   - API calls made: ${totalApiCalls}`)
     console.log(`   - Price records created: ${totalPriceRecords}`)
@@ -190,6 +358,7 @@ serve(async (req) => {
         summary: {
           total_processed: totalProcessed,
           successful: totalSuccessful,
+          skipped: totalSkipped,
           errors: errors.length,
           api_calls_used: totalApiCalls,
           price_records_created: totalPriceRecords

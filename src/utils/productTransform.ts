@@ -27,9 +27,11 @@ function sanitizeProductData(data: any): any {
     'Buy URL', 'strBuyURL',
     'Product URL', 'strProductURL',
     'Merchant Name', 'strMerchantName',
+    'Subcategory Name', 'strSubcategoryName',
     'Category Name', 'strCategoryName',
     'Department Name', 'strDepartmentName',
-    'Product SKU', 'strProductSKU'
+    'Product SKU', 'strProductSKU',
+    'Brand Name', 'strBrandName'
   ];
   
   safeFields.forEach(field => {
@@ -133,7 +135,7 @@ export function transformAvantLinkProduct(avantLinkProduct: any): Product {
     imageUrl,
     affiliateUrl,
     merchant: merchantName,
-    category: sanitized['Category Name'] || sanitized.strCategoryName || sanitized['Department Name'] || sanitized.strDepartmentName || 'General',
+    category: getOptimalCategory(sanitized),
     discount: discountPercent > 0 ? Math.round(discountPercent) : undefined,
     rating: undefined // AvantLink doesn't provide ratings, could be enhanced later
   };
@@ -146,6 +148,65 @@ export function transformAvantLinkProducts(avantLinkProducts: AvantLinkProduct[]
   return avantLinkProducts
     .map(transformAvantLinkProduct)
     .filter(product => product.price > 0 && product.name.trim() !== ''); // Filter out invalid products
+}
+
+/**
+ * Get the optimal category using hierarchy: Subcategory > Category > Department
+ * Creates hierarchical category names when multiple levels are available
+ */
+function getOptimalCategory(sanitized: any): string {
+  const subcategory = sanitized['Subcategory Name'] || sanitized.strSubcategoryName;
+  const category = sanitized['Category Name'] || sanitized.strCategoryName;
+  const department = sanitized['Department Name'] || sanitized.strDepartmentName;
+
+  // If we have subcategory, create hierarchical name
+  if (subcategory && category && department) {
+    // Only create hierarchy if they're meaningfully different
+    if (subcategory !== category && category !== department) {
+      return `${department} > ${category} > ${subcategory}`;
+    }
+  }
+
+  // If we have category and department, create two-level hierarchy
+  if (category && department && category !== department) {
+    return `${department} > ${category}`;
+  }
+
+  // Fall back to most specific available
+  return subcategory || category || department || 'General';
+}
+
+/**
+ * Normalize category name for consistent filtering
+ * Removes hierarchy notation for filter matching
+ */
+function getNormalizedCategory(hierarchicalCategory: string): string {
+  // Extract the most specific part (after the last >)
+  const parts = hierarchicalCategory.split(' > ');
+  return parts[parts.length - 1].trim();
+}
+
+/**
+ * Get all category levels from a hierarchical category
+ * Returns array of categories for multi-level filtering
+ */
+function getCategoryLevels(hierarchicalCategory: string): string[] {
+  if (!hierarchicalCategory || hierarchicalCategory === 'General') {
+    return ['General'];
+  }
+
+  const parts = hierarchicalCategory.split(' > ').map(part => part.trim());
+  const levels: string[] = [];
+  
+  // Add each level and cumulative hierarchy
+  for (let i = 0; i < parts.length; i++) {
+    levels.push(parts[i]); // Individual level (e.g., "Packs And Bags")
+    if (i > 0) {
+      levels.push(parts.slice(0, i + 1).join(' > ')); // Cumulative (e.g., "Packs And Bags > Backpacking Packs")
+    }
+  }
+  
+  return [...new Set(levels)]; // Remove duplicates
 }
 
 /**
@@ -205,20 +266,34 @@ function cleanDescription(description: string): string {
 }
 
 /**
- * Extract unique categories from AvantLink products
+ * Extract unique categories from AvantLink products with hierarchy support
  */
 export function extractCategories(avantLinkProducts: any[]): string[] {
   const categories = new Set<string>();
   
   avantLinkProducts.forEach(product => {
-    const category = product['Category Name'] || product.strCategoryName || product['Department Name'] || product.strDepartmentName;
-    if (category && category.trim()) {
-      categories.add(category.trim());
+    const hierarchicalCategory = getOptimalCategory(product);
+    if (hierarchicalCategory && hierarchicalCategory.trim()) {
+      // Add the full hierarchical category
+      categories.add(hierarchicalCategory.trim());
+      
+      // Also add individual levels for flexible filtering
+      const levels = getCategoryLevels(hierarchicalCategory);
+      levels.forEach(level => {
+        if (level && level !== hierarchicalCategory) {
+          categories.add(level);
+        }
+      });
     }
   });
   
   return Array.from(categories).sort();
 }
+
+/**
+ * Export category helper functions for use in other modules
+ */
+export { getNormalizedCategory, getCategoryLevels };
 
 /**
  * Extract unique merchants from AvantLink products

@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { AvantLinkProduct } from './avantlink';
+import { categoryValidationService } from './categoryValidation';
+import { transformAvantLinkProduct as transformProductForUI } from '../utils/productTransform';
 
 export interface ProductData {
   sku: string;
@@ -65,8 +67,28 @@ function transformAvantLinkProduct(product: AvantLinkProduct): ProductData {
   const longDescription = getProductField(product, 'txtLongDescription', 'Description');
   const shortDescription = getProductField(product, 'txtShortDescription', 'Short Description');
   const abbreviatedDescription = getProductField(product, 'txtAbbreviatedDescription', 'Abbreviated Description');
+  const subcategoryName = getProductField(product, 'strSubcategoryName', 'Subcategory Name');
   const categoryName = getProductField(product, 'strCategoryName', 'Category Name');
   const departmentName = getProductField(product, 'strDepartmentName', 'Department Name');
+
+  // Use the hierarchical category generation from productTransform
+  const getOptimalCategory = (subcategory: string, category: string, department: string): string => {
+    // If we have subcategory, create hierarchical name
+    if (subcategory && category && department) {
+      // Only create hierarchy if they're meaningfully different
+      if (subcategory !== category && category !== department) {
+        return `${department} > ${category} > ${subcategory}`;
+      }
+    }
+
+    // If we have category and department, create two-level hierarchy
+    if (category && department && category !== department) {
+      return `${department} > ${category}`;
+    }
+
+    // Fall back to most specific available
+    return subcategory || category || department || 'General';
+  };
 
   return {
     sku: productSku || productId || `unknown-${Date.now()}`,
@@ -81,8 +103,8 @@ function transformAvantLinkProduct(product: AvantLinkProduct): ProductData {
     image_url: largeImage || mediumImage || thumbnailImage,
     buy_url: buyUrl,
     description: longDescription || abbreviatedDescription || shortDescription,
-    category: categoryName,
-    subcategory: departmentName
+    category: getOptimalCategory(subcategoryName, categoryName, departmentName),
+    subcategory: subcategoryName // Keep subcategory field for reference
   };
 }
 
@@ -231,6 +253,18 @@ export async function dailyFullSync(): Promise<{
           totalErrors += result.errors.length;
           allErrors.push(...result.errors);
           
+          // Update category validation after each batch
+          if (result.success > 0) {
+            try {
+              const transformedProducts = apiResponse.products
+                .filter(validateProduct)
+                .map(transformProductForUI);
+              categoryValidationService.validateCategories(transformedProducts);
+            } catch (categoryError) {
+              console.warn('⚠️ Failed to update category validation:', categoryError);
+            }
+          }
+          
           // Move to next page
           page++;
           
@@ -289,6 +323,18 @@ export async function dailyFullSync(): Promise<{
           totalSaved += result.success;
           totalErrors += result.errors.length;
           allErrors.push(...result.errors);
+          
+          // Update category validation after each batch
+          if (result.success > 0) {
+            try {
+              const transformedProducts = apiResponse.products
+                .filter(validateProduct)
+                .map(transformProductForUI);
+              categoryValidationService.validateCategories(transformedProducts);
+            } catch (categoryError) {
+              console.warn('⚠️ Failed to update category validation:', categoryError);
+            }
+          }
           
           page++;
           
@@ -424,6 +470,18 @@ export async function syncMerchantProducts(merchantIds: string[], merchantName: 
         totalErrors += result.errors.length;
         allErrors.push(...result.errors);
         
+        // Update category validation after each batch
+        if (result.success > 0) {
+          try {
+            const transformedProducts = apiResponse.products
+              .filter(validateProduct)
+              .map(transformAvantLinkProduct);
+            categoryValidationService.validateCategories(transformedProducts);
+          } catch (categoryError) {
+            console.warn('⚠️ Failed to update category validation:', categoryError);
+          }
+        }
+        
         page++;
         
         if (apiResponse.products.length < 10 && page > 3) {
@@ -538,6 +596,19 @@ export async function syncSaleProducts(searchTerm = 'sale', merchantIds?: string
 
     // Save to database
     const result = await saveProductsToDatabase(apiResponse.products);
+    
+    // Update category validation after sync
+    if (result.success > 0) {
+      try {
+        const transformedProducts = apiResponse.products
+          .filter(validateProduct)
+          .map(transformAvantLinkProduct);
+        categoryValidationService.validateCategories(transformedProducts);
+        console.log('📊 Category validation updated after sync');
+      } catch (categoryError) {
+        console.warn('⚠️ Failed to update category validation:', categoryError);
+      }
+    }
     
     console.log(`✅ Sync completed: ${result.success} saved, ${result.errors.length} errors`);
     

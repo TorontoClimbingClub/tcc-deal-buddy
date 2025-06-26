@@ -25,9 +25,9 @@ async function executeComprehensiveBackfill() {
     console.log(`   Coverage: ${initialProductCount > 0 ? Math.round((initialHistoryCount || 0) / initialProductCount * 100) : 0}%\n`)
     
     // Execute comprehensive backfill
-    console.log('🔄 Invoking comprehensive-price-backfill function...')
-    console.log('⏱️  This will take 15-20 minutes to process all 2,184 products')
-    console.log('📡 Processing in batches of 5 with rate limiting\n')
+    console.log('🔄 Invoking optimized comprehensive-price-backfill function...')
+    console.log('⏱️  Processing only products that need API calls (pre-filtered for efficiency)')
+    console.log('📡 Smart batching with placeholder tracking and error recovery\n')
     
     const startTime = Date.now()
     
@@ -35,9 +35,9 @@ async function executeComprehensiveBackfill() {
       body: {
         mode: 'full_catalog',
         batch_size: 5,
-        max_products: 2184,
-        delay_between_batches: 2000,
-        delay_between_requests: 500
+        max_products: null, // No limit - fetch all products
+        resume: true,
+        skip_recent_hours: 24 // Skip products updated in last 24 hours
       }
     })
     

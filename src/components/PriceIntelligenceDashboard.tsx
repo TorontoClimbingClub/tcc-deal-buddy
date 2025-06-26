@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { TrendingUp, TrendingDown, Target, DollarSign, ShoppingCart, Star, Clock, ArrowUp, ArrowDown, Search, History } from 'lucide-react'
+import { TrendingUp, TrendingDown, Target, DollarSign, ShoppingCart, Star, Clock, ArrowUp, ArrowDown, Search, History, Filter } from 'lucide-react'
 import { usePriceIntelligence } from '@/hooks/usePriceIntelligence'
 import { useProducts } from '@/hooks/useProducts'
 import { usePriceHistory } from '@/hooks/usePriceHistory'
+import { useGlobalFilters } from '@/contexts/FilterContext'
+import { useFilteredProducts } from '@/hooks/useFilteredProducts'
 import ProductCard from './ProductCard'
 import { PriceHistoryChart } from './PriceHistoryChart'
 
@@ -33,37 +35,12 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
     setPageSize
   } = useProducts()
   const { fetchPriceHistory, loading: historyLoading } = usePriceHistory()
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [dealQualityFilter, setDealQualityFilter] = useState<string>('all')
-  const [filteredDeals, setFilteredDeals] = useState(bestDeals)
-  const [searchTerm, setSearchTerm] = useState('')
+  const { filters, isFilterActive } = useGlobalFilters()
+  const { filteredProducts, filterStats, hasActiveFilters } = useFilteredProducts(products)
+  const { filteredProducts: filteredDeals } = useFilteredProducts(bestDeals)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [priceHistory, setPriceHistory] = useState<any>(null)
   const [showPriceHistory, setShowPriceHistory] = useState(false)
-
-  // Apply filters to deals
-  const applyFilters = async () => {
-    const filters: any = {}
-    
-    if (selectedCategory !== 'all') {
-      filters.category = selectedCategory
-    }
-    
-    if (dealQualityFilter === 'excellent') {
-      filters.dealQualityThreshold = 80
-    } else if (dealQualityFilter === 'good') {
-      filters.dealQualityThreshold = 60
-    } else if (dealQualityFilter === 'great_price') {
-      filters.pricePosition = 'great_price'
-    }
-
-    const results = await searchIntelligentDeals(filters)
-    setFilteredDeals(results || [])
-  }
-
-  React.useEffect(() => {
-    applyFilters()
-  }, [selectedCategory, dealQualityFilter, bestDeals])
 
   // Load all products on component mount for the "All Products" tab
   React.useEffect(() => {
@@ -82,10 +59,10 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
     }
   }
 
-  // Handle product search
+  // Handle product search (uses global search from sidebar)
   const handleSearch = async () => {
-    if (searchTerm.trim()) {
-      await searchAllProducts(searchTerm, 1) // Reset to page 1 for new search
+    if (filters.search.trim()) {
+      await searchAllProducts(filters.search, 1) // Reset to page 1 for new search
     } else {
       await getAllProducts(1) // Reset to page 1 for new search
     }
@@ -94,19 +71,22 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
   // Handle page changes
   const handlePageChange = async (newPage: number) => {
     setPage(newPage)
-    if (searchTerm.trim()) {
-      await searchAllProducts(searchTerm, newPage)
+    if (filters.search.trim()) {
+      await searchAllProducts(filters.search, newPage)
     } else {
       await getAllProducts(newPage)
     }
   }
 
-  // Calculate dashboard stats
+  // Calculate dashboard stats using filtered data
   const dashboardStats = React.useMemo(() => {
-    const totalDeals = bestDeals.length
-    const excellentDeals = bestDeals.filter(deal => (deal.deal_quality_score || 0) >= 80).length
-    const greatPriceDeals = bestDeals.filter(deal => deal.price_trend_status === 'great_price').length
-    const avgDiscount = bestDeals.reduce((sum, deal) => sum + (deal.discount_percent || 0), 0) / totalDeals || 0
+    const dealsToAnalyze = filteredDeals.length > 0 ? filteredDeals : bestDeals
+    const totalDeals = dealsToAnalyze.length
+    const excellentDeals = dealsToAnalyze.filter(deal => (deal.deal_quality_score || 0) >= 80).length
+    const greatPriceDeals = dealsToAnalyze.filter(deal => deal.price_trend_status === 'great_price').length
+    const avgDiscount = totalDeals > 0 
+      ? dealsToAnalyze.reduce((sum, deal) => sum + (deal.discount_percent || 0), 0) / totalDeals 
+      : 0
 
     return {
       totalDeals,
@@ -114,7 +94,7 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
       greatPriceDeals,
       avgDiscount: avgDiscount.toFixed(1)
     }
-  }, [bestDeals])
+  }, [bestDeals, filteredDeals])
 
   // Get price trend indicator component
   const PriceTrendIndicator: React.FC<{ status?: string }> = ({ status }) => {
@@ -217,9 +197,16 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
               <CardTitle className="flex items-center gap-2">
                 <Search className="h-5 w-5" />
                 Browse All Products
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 ml-2">
+                    <Filter className="h-3 w-3 mr-1" />
+                    Filtered
+                  </Badge>
+                )}
               </CardTitle>
               <CardDescription>
                 Click on any product to view its complete price history
+                {hasActiveFilters && ' • Results filtered by sidebar settings'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -227,23 +214,35 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
-                    placeholder="Search products..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    className="pl-10"
+                    placeholder="Search controlled by sidebar..."
+                    value={filters.search}
+                    disabled
+                    className="pl-10 bg-gray-50"
                   />
                 </div>
                 <Button onClick={handleSearch} disabled={productsLoading}>
-                  {productsLoading ? 'Searching...' : 'Search'}
+                  {productsLoading ? 'Searching...' : 'Search API'}
                 </Button>
               </div>
+              
+              {/* Filter Indicator */}
+              {hasActiveFilters && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-800">
+                    <Filter className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      Showing {filteredProducts.length} of {products.length} products (filtered by sidebar)
+                    </span>
+                  </div>
+                </div>
+              )}
               
               {/* Pagination Controls */}
               {totalProducts > 0 && (
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalProducts)} of {totalProducts} products
+                    Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalProducts)} of {totalProducts} API products
+                    {hasActiveFilters && ` • ${filteredProducts.length} match filters`}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button 
@@ -283,22 +282,29 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
           )}
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={`${filters.viewMode === 'grid' 
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' 
+            : 'space-y-4'}`}>
             {productsLoading ? (
               <div className="col-span-full text-center py-8">
                 <p className="text-gray-500">Loading products...</p>
               </div>
-            ) : products.length === 0 ? (
+            ) : filteredProducts.length === 0 && products.length > 0 ? (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-500">No products match your filters. Try adjusting them in the sidebar!</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="col-span-full text-center py-8">
                 <p className="text-gray-500">No products found. Try searching for something!</p>
               </div>
             ) : (
-              products.map((product) => (
+              filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
                   onViewDetails={handleProductSelect}
                   showPriceIntelligence={true}
+                  viewMode={filters.viewMode}
                 />
               ))
             )}
@@ -306,48 +312,44 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
         </TabsContent>
 
         <TabsContent value="deals" className="space-y-4">
-          {/* Filters */}
+          {/* Filter Status */}
           <Card>
             <CardHeader>
-              <CardTitle>Filter Deals</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Smart Deals
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                    <Filter className="h-3 w-3 mr-1" />
+                    Filtered
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>
-                Find the best deals using our price intelligence system
+                {hasActiveFilters 
+                  ? `Best deals filtered by your sidebar settings • ${filteredDeals.length} deals match your criteria`
+                  : `Find the best deals using our price intelligence system • ${bestDeals.length} deals available`
+                }
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categoryInsights.slice(0, 10).map(category => (
-                      <SelectItem key={category.category} value={category.category}>
-                        {category.category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={dealQualityFilter} onValueChange={setDealQualityFilter}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Deal Quality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Qualities</SelectItem>
-                    <SelectItem value="excellent">Excellent Deals (80%+)</SelectItem>
-                    <SelectItem value="good">Good Deals (60%+)</SelectItem>
-                    <SelectItem value="great_price">Great Prices Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
+            {hasActiveFilters && (
+              <CardContent>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-800">
+                    <Filter className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      Use sidebar to modify filters • All deal quality filters applied automatically
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            )}
           </Card>
 
           {/* Deals Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredDeals.slice(0, 20).map(deal => (
+          <div className={`${filters.viewMode === 'grid' 
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' 
+            : 'space-y-4'}`}>
+            {(hasActiveFilters ? filteredDeals : bestDeals).slice(0, 20).map(deal => (
               <Card key={`${deal.sku}-${deal.merchant_id}`} className="overflow-hidden">
                 <div className="aspect-square relative">
                   <img

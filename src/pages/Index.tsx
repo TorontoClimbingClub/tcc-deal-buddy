@@ -3,36 +3,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { TrendingUp, Bell, Star, Grid, BarChart3, Calendar, Activity, DollarSign } from 'lucide-react';
+import { TrendingUp, Bell, Star, Grid, BarChart3, Calendar, Activity, DollarSign, Filter } from 'lucide-react';
 import ProductGrid from '../components/ProductGrid';
 import { PriceIntelligenceDashboard } from '../components/PriceIntelligenceDashboard';
 import Sidebar from '../components/Sidebar';
 import { usePriceAlerts } from '../hooks/usePriceAlerts';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { useRecentActivity } from '../hooks/useRecentActivity';
+import { FilterProvider, useGlobalFilters } from '../contexts/FilterContext';
+import { useProducts } from '../hooks/useProducts';
+import { useFilteredProducts } from '../hooks/useFilteredProducts';
 
-interface SavedFilter {
-  id: string;
-  name: string;
-  category?: string;
-  priceRange?: { min: number; max: number };
-  brand?: string;
-  onSale?: boolean;
-  count: number;
-}
-
-const Index = () => {
+const DashboardContent = () => {
   const [activeView, setActiveView] = useState('dashboard');
-  const [selectedFilter, setSelectedFilter] = useState<SavedFilter | null>(null);
   const { getAlertStats } = usePriceAlerts();
   const alertStats = getAlertStats();
   const dashboardStats = useDashboardStats();
   const { activities, loading: activitiesLoading, error: activitiesError } = useRecentActivity();
-
-  const handleFilterSelect = (filter: SavedFilter) => {
-    setSelectedFilter(filter);
-    setActiveView('deals'); // Switch to deals view when filter is selected
-  };
+  const { products } = useProducts();
+  const { filters, getActiveFilterCount, isFilterActive } = useGlobalFilters();
+  const { filteredProducts, filterStats, hasActiveFilters } = useFilteredProducts(products);
 
   const renderDashboardView = () => (
     <div className="space-y-6">
@@ -43,6 +33,7 @@ const Index = () => {
         </h1>
         <p className="text-gray-600 mb-4">
           Your intelligent price tracking and deal discovery dashboard for outdoor gear
+          {hasActiveFilters && ' • Currently showing filtered results'}
         </p>
         <div className="flex flex-wrap gap-2">
           <Badge variant="secondary" className="bg-blue-50 text-blue-700">
@@ -54,6 +45,12 @@ const Index = () => {
           <Badge variant="secondary" className="bg-purple-50 text-purple-700">
             Smart Recommendations
           </Badge>
+          {hasActiveFilters && (
+            <Badge variant="secondary" className="bg-orange-50 text-orange-700">
+              <Filter className="h-3 w-3 mr-1" />
+              {getActiveFilterCount()} Filters Active
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -63,8 +60,15 @@ const Index = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Active Deals</p>
-                <p className="text-3xl font-bold text-blue-600">{dashboardStats.loading ? '...' : dashboardStats.activeDeals.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">
+                  {hasActiveFilters ? 'Filtered Deals' : 'Active Deals'}
+                </p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {hasActiveFilters 
+                    ? filterStats.totalDeals.toLocaleString()
+                    : (dashboardStats.loading ? '...' : dashboardStats.activeDeals.toLocaleString())
+                  }
+                </p>
               </div>
               <Grid className="h-8 w-8 text-blue-500" />
             </div>
@@ -76,7 +80,12 @@ const Index = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Avg. Discount</p>
-                <p className="text-3xl font-bold text-green-600">{dashboardStats.loading ? '...' : `${dashboardStats.averageDiscount}%`}</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {hasActiveFilters 
+                    ? `${filterStats.avgDiscount}%`
+                    : (dashboardStats.loading ? '...' : `${dashboardStats.averageDiscount}%`)
+                  }
+                </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
             </div>
@@ -99,8 +108,12 @@ const Index = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Products</p>
-                <p className="text-3xl font-bold text-orange-600">{dashboardStats.loading ? '...' : dashboardStats.totalProducts.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">
+                  {hasActiveFilters ? 'Total Products' : 'Total Products'}
+                </p>
+                <p className="text-3xl font-bold text-orange-600">
+                  {dashboardStats.loading ? '...' : dashboardStats.totalProducts.toLocaleString()}
+                </p>
               </div>
               <Activity className="h-8 w-8 text-orange-500" />
             </div>
@@ -208,30 +221,7 @@ const Index = () => {
       case 'dashboard':
         return renderDashboardView();
       case 'deals':
-        return (
-          <div className="space-y-4">
-            {selectedFilter && (
-              <Card className="border-blue-200 bg-blue-50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-blue-900">Filter Applied: {selectedFilter.name}</h3>
-                      <p className="text-sm text-blue-700">Showing {selectedFilter.count} products</p>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setSelectedFilter(null)}
-                    >
-                      Clear Filter
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            <ProductGrid />
-          </div>
-        );
+        return <ProductGrid />;
       case 'intelligence':
         return <PriceIntelligenceDashboard />;
       case 'alerts':
@@ -301,7 +291,6 @@ const Index = () => {
       <Sidebar 
         activeView={activeView}
         onViewChange={setActiveView}
-        onFilterSelect={handleFilterSelect}
       />
       
       {/* Main Content */}
@@ -313,6 +302,14 @@ const Index = () => {
         </ScrollArea>
       </div>
     </div>
+  );
+};
+
+const Index = () => {
+  return (
+    <FilterProvider>
+      <DashboardContent />
+    </FilterProvider>
   );
 };
 

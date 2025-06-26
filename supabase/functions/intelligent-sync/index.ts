@@ -48,7 +48,7 @@ interface TransformedProduct {
 }
 
 interface SyncOptions {
-  mode?: 'daily' | 'weekly' | 'full' | 'sale_only' | 'favorites'
+  mode?: 'daily' | 'weekly' | 'full' | 'comprehensive' | 'sale_only' | 'favorites'
   merchants?: number[]
   categories?: string[]
   maxProductsPerMerchant?: number
@@ -82,6 +82,13 @@ const SYNC_STRATEGIES = {
     searchTerms: ['*'],
     maxPerMerchant: 5000,
     jobType: 'full_catalog'
+  },
+  comprehensive: {
+    saleOnly: false,
+    searchTerms: ['*'],
+    maxPerMerchant: 50000,
+    jobType: 'comprehensive_catalog',
+    useComprehensiveFunction: true
   },
   sale_only: {
     saleOnly: true,
@@ -124,6 +131,44 @@ serve(async (req) => {
     const strategy = SYNC_STRATEGIES[mode]
     if (!strategy) {
       throw new Error(`Invalid sync mode: ${mode}`)
+    }
+
+    // Redirect to comprehensive-sync function if using comprehensive mode
+    if (mode === 'comprehensive' && strategy.useComprehensiveFunction) {
+      console.log('🔄 Redirecting to comprehensive-sync function for complete catalog coverage')
+      
+      // Call the comprehensive-sync function
+      const comprehensiveUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/comprehensive-sync`
+      const comprehensiveResponse = await fetch(comprehensiveUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+        },
+        body: JSON.stringify({
+          merchantIds: syncOptions.merchants || DEFAULT_MERCHANTS,
+          testMode: false,
+          maxProductsTotal: strategy.maxPerMerchant
+        })
+      })
+
+      if (!comprehensiveResponse.ok) {
+        throw new Error(`Comprehensive sync failed: ${comprehensiveResponse.status}`)
+      }
+
+      const comprehensiveResult = await comprehensiveResponse.json()
+      
+      return new Response(
+        JSON.stringify({
+          ...comprehensiveResult,
+          redirected_from: 'intelligent-sync',
+          original_mode: mode
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
     }
 
     // Initialize Supabase client with service role key

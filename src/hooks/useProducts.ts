@@ -9,12 +9,17 @@ interface UseProductsResult {
   loading: boolean;
   error: string | null;
   totalProducts: number;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
   getCurrentDeals: () => Promise<void>;
   getProductsByMerchant: (merchantId: number) => Promise<void>;
   searchProducts: (searchTerm: string) => Promise<void>;
-  searchAllProducts: (searchTerm: string) => Promise<void>;
-  getAllProducts: () => Promise<void>;
+  searchAllProducts: (searchTerm: string, page?: number) => Promise<void>;
+  getAllProducts: (page?: number) => Promise<void>;
   refreshProducts: () => Promise<void>;
+  setPage: (page: number) => void;
+  setPageSize: (size: number) => void;
 }
 
 interface DatabaseProduct {
@@ -43,6 +48,9 @@ export function useProducts(): UseProductsResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSizeState] = useState(50);
+  const [totalPages, setTotalPages] = useState(0);
 
   const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => ({
     id: dbProduct.sku, // Use SKU as ID for compatibility
@@ -155,17 +163,35 @@ export function useProducts(): UseProductsResult {
     }
   }, [handleDatabaseError]);
 
-  const getAllProducts = useCallback(async () => {
+  const getAllProducts = useCallback(async (page: number = currentPage) => {
     setLoading(true);
     setError(null);
 
     try {
+      // First, get total count
+      const { count, error: countError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('last_sync_date', new Date().toISOString().split('T')[0]);
+
+      if (countError) {
+        throw countError;
+      }
+
+      const total = count || 0;
+      setTotalProducts(total);
+      setTotalPages(Math.ceil(total / pageSize));
+
+      // Then get paginated data
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
         .eq('last_sync_date', new Date().toISOString().split('T')[0])
         .order('name', { ascending: true })
-        .limit(500);
+        .range(from, to);
 
       if (queryError) {
         throw queryError;
@@ -174,7 +200,7 @@ export function useProducts(): UseProductsResult {
       if (data) {
         const transformedProducts = data.map(transformDatabaseProduct);
         setProducts(transformedProducts);
-        setTotalProducts(data.length);
+        setCurrentPage(page);
         setError(null);
       }
     } catch (err) {
@@ -182,20 +208,39 @@ export function useProducts(): UseProductsResult {
     } finally {
       setLoading(false);
     }
-  }, [handleDatabaseError]);
+  }, [handleDatabaseError, currentPage, pageSize]);
 
-  const searchAllProducts = useCallback(async (searchTerm: string) => {
+  const searchAllProducts = useCallback(async (searchTerm: string, page: number = 1) => {
     setLoading(true);
     setError(null);
 
     try {
+      // First, get total count for search
+      const { count, error: countError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('last_sync_date', new Date().toISOString().split('T')[0])
+        .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`);
+
+      if (countError) {
+        throw countError;
+      }
+
+      const total = count || 0;
+      setTotalProducts(total);
+      setTotalPages(Math.ceil(total / pageSize));
+
+      // Then get paginated search results
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
         .eq('last_sync_date', new Date().toISOString().split('T')[0])
         .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
         .order('name', { ascending: true })
-        .limit(500);
+        .range(from, to);
 
       if (queryError) {
         throw queryError;
@@ -204,7 +249,7 @@ export function useProducts(): UseProductsResult {
       if (data) {
         const transformedProducts = data.map(transformDatabaseProduct);
         setProducts(transformedProducts);
-        setTotalProducts(data.length);
+        setCurrentPage(page);
         setError(null);
       }
     } catch (err) {
@@ -212,11 +257,21 @@ export function useProducts(): UseProductsResult {
     } finally {
       setLoading(false);
     }
-  }, [handleDatabaseError]);
+  }, [handleDatabaseError, pageSize]);
 
   const refreshProducts = useCallback(async () => {
     await getCurrentDeals();
   }, [getCurrentDeals]);
+
+  // Pagination helpers
+  const setPage = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  const setPageSize = useCallback((size: number) => {
+    setPageSizeState(size);
+    setCurrentPage(1); // Reset to first page when changing page size
+  }, []);
 
   // Auto-load current deals on mount
   useEffect(() => {
@@ -228,12 +283,17 @@ export function useProducts(): UseProductsResult {
     loading,
     error,
     totalProducts,
+    currentPage,
+    totalPages,
+    pageSize,
     getCurrentDeals,
     getProductsByMerchant,
     searchProducts,
     searchAllProducts,
     getAllProducts,
-    refreshProducts
+    refreshProducts,
+    setPage,
+    setPageSize
   };
 }
 

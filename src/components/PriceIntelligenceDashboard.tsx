@@ -19,7 +19,19 @@ interface PriceIntelligenceDashboardProps {
 
 export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProps> = ({ className }) => {
   const { bestDeals, categoryInsights, loading, searchIntelligentDeals } = usePriceIntelligence()
-  const { products, loading: productsLoading, searchProducts, searchAllProducts, getAllProducts } = useProducts()
+  const { 
+    products, 
+    loading: productsLoading, 
+    totalProducts,
+    currentPage,
+    totalPages,
+    pageSize,
+    searchProducts, 
+    searchAllProducts, 
+    getAllProducts,
+    setPage,
+    setPageSize
+  } = useProducts()
   const { fetchPriceHistory, loading: historyLoading } = usePriceHistory()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [dealQualityFilter, setDealQualityFilter] = useState<string>('all')
@@ -73,9 +85,19 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
   // Handle product search
   const handleSearch = async () => {
     if (searchTerm.trim()) {
-      await searchAllProducts(searchTerm)
+      await searchAllProducts(searchTerm, 1) // Reset to page 1 for new search
     } else {
-      await getAllProducts()
+      await getAllProducts(1) // Reset to page 1 for new search
+    }
+  }
+
+  // Handle page changes
+  const handlePageChange = async (newPage: number) => {
+    setPage(newPage)
+    if (searchTerm.trim()) {
+      await searchAllProducts(searchTerm, newPage)
+    } else {
+      await getAllProducts(newPage)
     }
   }
 
@@ -201,7 +223,7 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4">
+              <div className="flex gap-4 mb-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
@@ -216,6 +238,36 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
                   {productsLoading ? 'Searching...' : 'Search'}
                 </Button>
               </div>
+              
+              {/* Pagination Controls */}
+              {totalProducts > 0 && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalProducts)} of {totalProducts} products
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage <= 1 || productsLoading}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage >= totalPages || productsLoading}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

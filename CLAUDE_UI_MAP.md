@@ -1,7 +1,7 @@
 # CLAUDE UI MAP
 *Auto-generated component mapping for precise UI editing*
 
-**Last Updated:** 2025-06-26T16:07:27.550Z
+**Last Updated:** 2025-06-26T18:08:36.029Z
 **Project:** tcc-deal-buddy
 **Components Scanned:** 61
 
@@ -149,154 +149,158 @@
 
 #### PriceIntelligenceDashboard
 **File:** `src/components/PriceIntelligenceDashboard.tsx`
-**Lines:** 489
+**Lines:** 541
 
 **Key Elements:**
 - **PriceIntelligenceDashboardProps** (line 20) - `priceintelligencedashboardprops`
   - Context: `export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp...`
-- **Badge** (line 102) - `badge`
+- **Badge** (line 124) - `badge`
   - Context: `<Badge variant="secondary" className="bg-green-100 text-green-800">`
-- **TrendingDown** (line 103) - `trendingdown`
+- **TrendingDown** (line 125) - `trendingdown`
   - Context: `<TrendingDown className="h-3 w-3 mr-1" />`
-- **Badge** (line 109) - `badge`
+- **Badge** (line 131) - `badge`
   - Context: `<Badge variant="secondary" className="bg-blue-100 text-blue-800">`
-- **Target** (line 110) - `target`
+- **Target** (line 132) - `target`
   - Context: `<Target className="h-3 w-3 mr-1" />`
-- **Badge** (line 116) - `badge`
+- **Badge** (line 138) - `badge`
   - Context: `<Badge variant="outline">`
-- **TrendingUp** (line 117) - `trendingup`
+- **TrendingUp** (line 139) - `trendingup`
   - Context: `<TrendingUp className="h-3 w-3 mr-1" />`
-- **Badge** (line 123) - `badge`
+- **Badge** (line 145) - `badge`
   - Context: `<Badge variant="secondary" className="bg-purple-100 text-purple-800">`
-- **Star** (line 124) - `star`
+- **Star** (line 146) - `star`
   - Context: `<Star className="h-3 w-3 mr-1" />`
-- **Card** (line 167) - `card`
+- **Card** (line 189) - `card`
   - Context: `<Card key={i}>`
-- **CardContent** (line 168) - `cardcontent`
+- **CardContent** (line 190) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **Tabs** (line 183) - `tabs`
+- **Tabs** (line 205) - `tabs`
   - Context: `<Tabs defaultValue="all-products" className="w-full">`
-- **TabsList** (line 184) - `tabslist`
+- **TabsList** (line 206) - `tabslist`
   - Context: `<TabsList className="grid w-full grid-cols-4">`
-- **TabsTrigger** (line 185) - `tabstrigger`
+- **TabsTrigger** (line 207) - `tabstrigger`
   - Context: `<TabsTrigger value="all-products">All Products</TabsTrigger>`
-- **TabsTrigger** (line 186) - `tabstrigger`
+- **TabsTrigger** (line 208) - `tabstrigger`
   - Context: `<TabsTrigger value="deals">Smart Deals</TabsTrigger>`
-- **TabsTrigger** (line 187) - `tabstrigger`
+- **TabsTrigger** (line 209) - `tabstrigger`
   - Context: `<TabsTrigger value="categories">Category Insights</TabsTrigger>`
-- **TabsTrigger** (line 188) - `tabstrigger`
+- **TabsTrigger** (line 210) - `tabstrigger`
   - Context: `<TabsTrigger value="trends">Market Trends</TabsTrigger>`
-- **TabsContent** (line 191) - `tabscontent`
+- **TabsContent** (line 213) - `tabscontent`
   - Context: `<TabsContent value="all-products" className="space-y-4">`
-- **Card** (line 193) - `card`
+- **Card** (line 215) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 194) - `cardheader`
+- **CardHeader** (line 216) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 195) - `cardtitle`
+- **CardTitle** (line 217) - `cardtitle`
   - Context: `<CardTitle className="flex items-center gap-2">`
-- **Search** (line 196) - `search`
+- **Search** (line 218) - `search`
   - Context: `<Search className="h-5 w-5" />`
-- **CardDescription** (line 199) - `carddescription`
+- **CardDescription** (line 221) - `carddescription`
   - Context: `<CardDescription>`
-- **CardContent** (line 203) - `cardcontent`
+- **CardContent** (line 225) - `cardcontent`
   - Context: `<CardContent>`
-- **Search** (line 206) - `search`
+- **Search** (line 228) - `search`
   - Context: `<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-...`
-- **Input** (line 207) - `input`
+- **Input** (line 229) - `input`
   - Context: `<Input`
-- **Button** (line 215) - `button`
+- **Button** (line 237) - `button`
   - Context: `<Button onClick={handleSearch} disabled={productsLoading}>`
-- **PriceHistoryChart** (line 224) - `pricehistorychart`
-  - Context: `<PriceHistoryChart`
-- **Card** (line 245) - `card`
-  - Context: `<Card`
-- **CardContent** (line 250) - `cardcontent`
-  - Context: `<CardContent className="p-4">`
-- **Button** (line 253) - `button`
+- **Button** (line 249) - `button`
   - Context: `<Button`
-- **History** (line 262) - `history`
-  - Context: `<History className="h-4 w-4" />`
-- **Badge** (line 284) - `badge`
-  - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">`
-- **TabsContent** (line 306) - `tabscontent`
-  - Context: `<TabsContent value="deals" className="space-y-4">`
-- **Card** (line 308) - `card`
-  - Context: `<Card>`
-- **CardHeader** (line 309) - `cardheader`
-  - Context: `<CardHeader>`
-- **CardTitle** (line 310) - `cardtitle`
-  - Context: `<CardTitle>Filter Deals</CardTitle>`
-- **CardDescription** (line 311) - `carddescription`
-  - Context: `<CardDescription>`
-- **CardContent** (line 315) - `cardcontent`
-  - Context: `<CardContent>`
-- **Select** (line 317) - `select`
-  - Context: `<Select value={selectedCategory} onValueChange={setSelectedCategory}>`
-- **SelectTrigger** (line 318) - `selecttrigger`
-  - Context: `<SelectTrigger className="w-[200px]">`
-- **SelectValue** (line 319) - `selectvalue`
-  - Context: `<SelectValue placeholder="Category" />`
-- **SelectContent** (line 321) - `selectcontent`
-  - Context: `<SelectContent>`
-- **SelectItem** (line 322) - `selectitem`
-  - Context: `<SelectItem value="all">All Categories</SelectItem>`
-- **SelectItem** (line 324) - `selectitem`
-  - Context: `<SelectItem key={category.category} value={category.category}>`
-- **Select** (line 331) - `select`
-  - Context: `<Select value={dealQualityFilter} onValueChange={setDealQualityFilter}>`
-- **SelectTrigger** (line 332) - `selecttrigger`
-  - Context: `<SelectTrigger className="w-[200px]">`
-- **SelectValue** (line 333) - `selectvalue`
-  - Context: `<SelectValue placeholder="Deal Quality" />`
-- **SelectContent** (line 335) - `selectcontent`
-  - Context: `<SelectContent>`
-- **SelectItem** (line 336) - `selectitem`
-  - Context: `<SelectItem value="all">All Qualities</SelectItem>`
-- **SelectItem** (line 337) - `selectitem`
-  - Context: `<SelectItem value="excellent">Excellent Deals (80%+)</SelectItem>`
-- **SelectItem** (line 338) - `selectitem`
-  - Context: `<SelectItem value="good">Good Deals (60%+)</SelectItem>`
-- **SelectItem** (line 339) - `selectitem`
-  - Context: `<SelectItem value="great_price">Great Prices Only</SelectItem>`
-- **Card** (line 349) - `card`
-  - Context: `<Card key={`${deal.sku}-${deal.merchant_id}`} className="overflow-hidden">`
-- **PriceTrendIndicator** (line 360) - `pricetrendindicator`
-  - Context: `<PriceTrendIndicator status={deal.price_trend_status} />`
-- **CardContent** (line 364) - `cardcontent`
+- **Button** (line 260) - `button`
+  - Context: `<Button`
+- **PriceHistoryChart** (line 276) - `pricehistorychart`
+  - Context: `<PriceHistoryChart`
+- **Card** (line 297) - `card`
+  - Context: `<Card`
+- **CardContent** (line 302) - `cardcontent`
   - Context: `<CardContent className="p-4">`
-- **Badge** (line 386) - `badge`
-  - Context: `<Badge variant="destructive" className="text-xs">`
-- **DealQualityIndicator** (line 392) - `dealqualityindicator`
-  - Context: `<DealQualityIndicator score={deal.deal_quality_score} />`
-- **Button** (line 402) - `button`
-  - Context: `<Button size="sm" className="w-full" asChild>`
-- **TabsContent** (line 415) - `tabscontent`
-  - Context: `<TabsContent value="categories" className="space-y-4">`
-- **Card** (line 418) - `card`
-  - Context: `<Card key={`${category.category}-${category.subcategory}`}>`
-- **CardHeader** (line 419) - `cardheader`
-  - Context: `<CardHeader>`
-- **CardTitle** (line 420) - `cardtitle`
-  - Context: `<CardTitle className="text-lg">{category.category}</CardTitle>`
-- **CardDescription** (line 422) - `carddescription`
-  - Context: `<CardDescription>{category.subcategory}</CardDescription>`
-- **CardContent** (line 425) - `cardcontent`
-  - Context: `<CardContent>`
-- **Badge** (line 436) - `badge`
-  - Context: `<Badge variant="outline">`
-- **TabsContent** (line 469) - `tabscontent`
-  - Context: `<TabsContent value="trends" className="space-y-4">`
-- **Card** (line 470) - `card`
+- **Button** (line 305) - `button`
+  - Context: `<Button`
+- **History** (line 314) - `history`
+  - Context: `<History className="h-4 w-4" />`
+- **Badge** (line 336) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">`
+- **TabsContent** (line 358) - `tabscontent`
+  - Context: `<TabsContent value="deals" className="space-y-4">`
+- **Card** (line 360) - `card`
   - Context: `<Card>`
+- **CardHeader** (line 361) - `cardheader`
+  - Context: `<CardHeader>`
+- **CardTitle** (line 362) - `cardtitle`
+  - Context: `<CardTitle>Filter Deals</CardTitle>`
+- **CardDescription** (line 363) - `carddescription`
+  - Context: `<CardDescription>`
+- **CardContent** (line 367) - `cardcontent`
+  - Context: `<CardContent>`
+- **Select** (line 369) - `select`
+  - Context: `<Select value={selectedCategory} onValueChange={setSelectedCategory}>`
+- **SelectTrigger** (line 370) - `selecttrigger`
+  - Context: `<SelectTrigger className="w-[200px]">`
+- **SelectValue** (line 371) - `selectvalue`
+  - Context: `<SelectValue placeholder="Category" />`
+- **SelectContent** (line 373) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 374) - `selectitem`
+  - Context: `<SelectItem value="all">All Categories</SelectItem>`
+- **SelectItem** (line 376) - `selectitem`
+  - Context: `<SelectItem key={category.category} value={category.category}>`
+- **Select** (line 383) - `select`
+  - Context: `<Select value={dealQualityFilter} onValueChange={setDealQualityFilter}>`
+- **SelectTrigger** (line 384) - `selecttrigger`
+  - Context: `<SelectTrigger className="w-[200px]">`
+- **SelectValue** (line 385) - `selectvalue`
+  - Context: `<SelectValue placeholder="Deal Quality" />`
+- **SelectContent** (line 387) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 388) - `selectitem`
+  - Context: `<SelectItem value="all">All Qualities</SelectItem>`
+- **SelectItem** (line 389) - `selectitem`
+  - Context: `<SelectItem value="excellent">Excellent Deals (80%+)</SelectItem>`
+- **SelectItem** (line 390) - `selectitem`
+  - Context: `<SelectItem value="good">Good Deals (60%+)</SelectItem>`
+- **SelectItem** (line 391) - `selectitem`
+  - Context: `<SelectItem value="great_price">Great Prices Only</SelectItem>`
+- **Card** (line 401) - `card`
+  - Context: `<Card key={`${deal.sku}-${deal.merchant_id}`} className="overflow-hidden">`
+- **PriceTrendIndicator** (line 412) - `pricetrendindicator`
+  - Context: `<PriceTrendIndicator status={deal.price_trend_status} />`
+- **CardContent** (line 416) - `cardcontent`
+  - Context: `<CardContent className="p-4">`
+- **Badge** (line 438) - `badge`
+  - Context: `<Badge variant="destructive" className="text-xs">`
+- **DealQualityIndicator** (line 444) - `dealqualityindicator`
+  - Context: `<DealQualityIndicator score={deal.deal_quality_score} />`
+- **Button** (line 454) - `button`
+  - Context: `<Button size="sm" className="w-full" asChild>`
+- **TabsContent** (line 467) - `tabscontent`
+  - Context: `<TabsContent value="categories" className="space-y-4">`
+- **Card** (line 470) - `card`
+  - Context: `<Card key={`${category.category}-${category.subcategory}`}>`
 - **CardHeader** (line 471) - `cardheader`
   - Context: `<CardHeader>`
 - **CardTitle** (line 472) - `cardtitle`
-  - Context: `<CardTitle>Market Trends</CardTitle>`
-- **CardDescription** (line 473) - `carddescription`
-  - Context: `<CardDescription>`
+  - Context: `<CardTitle className="text-lg">{category.category}</CardTitle>`
+- **CardDescription** (line 474) - `carddescription`
+  - Context: `<CardDescription>{category.subcategory}</CardDescription>`
 - **CardContent** (line 477) - `cardcontent`
   - Context: `<CardContent>`
-- **Clock** (line 479) - `clock`
+- **Badge** (line 488) - `badge`
+  - Context: `<Badge variant="outline">`
+- **TabsContent** (line 521) - `tabscontent`
+  - Context: `<TabsContent value="trends" className="space-y-4">`
+- **Card** (line 522) - `card`
+  - Context: `<Card>`
+- **CardHeader** (line 523) - `cardheader`
+  - Context: `<CardHeader>`
+- **CardTitle** (line 524) - `cardtitle`
+  - Context: `<CardTitle>Market Trends</CardTitle>`
+- **CardDescription** (line 525) - `carddescription`
+  - Context: `<CardDescription>`
+- **CardContent** (line 529) - `cardcontent`
+  - Context: `<CardContent>`
+- **Clock** (line 531) - `clock`
   - Context: `<Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />`
 
 #### ProductCard

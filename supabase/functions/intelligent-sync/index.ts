@@ -68,31 +68,31 @@ const SYNC_STRATEGIES = {
   daily: {
     saleOnly: true,
     searchTerms: ['*'],
-    maxPerMerchant: 200,
+    maxPerMerchant: 1000,
     jobType: 'daily_products'
   },
   weekly: {
     saleOnly: false,
-    searchTerms: ['*', 'climbing', 'hiking', 'camping', 'outdoor'],
-    maxPerMerchant: 1000,
+    searchTerms: ['*'],
+    maxPerMerchant: 2000,
     jobType: 'weekly_catalog'
   },
   full: {
     saleOnly: false,
-    searchTerms: ['*', 'climbing', 'hiking', 'camping', 'outdoor', 'gear', 'equipment'],
-    maxPerMerchant: 2000,
+    searchTerms: ['*'],
+    maxPerMerchant: 5000,
     jobType: 'full_catalog'
   },
   sale_only: {
     saleOnly: true,
-    searchTerms: ['*', 'clearance', 'sale'],
-    maxPerMerchant: 500,
+    searchTerms: ['*'],
+    maxPerMerchant: 1000,
     jobType: 'sale_items'
   },
   favorites: {
     saleOnly: false,
-    searchTerms: ['climbing', 'mountaineering'],
-    maxPerMerchant: 300,
+    searchTerms: ['*'],
+    maxPerMerchant: 1000,
     jobType: 'favorites_sync'
   }
 }

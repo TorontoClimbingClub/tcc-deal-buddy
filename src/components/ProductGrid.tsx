@@ -1,11 +1,27 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ProductCard, { Product } from './ProductCard';
 import ProductModal from './ProductModal';
-import Header from './Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, AlertCircle, Filter, Search, TrendingUp, ShoppingBag, Star, DollarSign } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Loader2, 
+  RefreshCw, 
+  Search, 
+  Filter, 
+  Grid3X3, 
+  List,
+  TrendingUp, 
+  ShoppingBag, 
+  Star, 
+  DollarSign,
+  Package,
+  Percent,
+  ArrowUpDown
+} from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 
 interface ProductGridProps {
@@ -21,10 +37,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [lastSearchTerm, setLastSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'price' | 'discount' | 'name'>('discount');
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  // Products now loaded from Supabase database (all merchants)
-
   const {
     products,
     loading,
@@ -35,8 +49,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false
     searchProducts,
     refreshProducts
   } = useProducts();
-
-  // Products automatically load from database on mount via useProducts hook
 
   // Extract unique categories and brands from actual products
   const categories = useMemo(() => 
@@ -58,9 +70,11 @@ const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false
       totalSavings: discountedProducts.reduce((sum, p) => {
         const savings = p.originalPrice ? p.originalPrice - p.price : 0;
         return sum + savings;
-      }, 0)
+      }, 0),
+      categoriesCount: categories.length,
+      brandsCount: brands.length
     };
-  }, [products]);
+  }, [products, categories, brands]);
 
   // Trending categories
   const trendingCategories = useMemo(() => {
@@ -78,38 +92,30 @@ const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false
   // Filter and sort products
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {
-      // Search filter
-      if (searchTerm && !product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !product.description.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-
-      // Category filter
-      if (selectedCategory !== 'all' && product.category !== selectedCategory) {
-        return false;
-      }
-
-      // Brand filter
-      if (selectedBrand !== 'all' && product.brand !== selectedBrand) {
-        return false;
-      }
-
-      // Price range filter
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          product.category.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      const matchesBrand = selectedBrand === 'all' || product.brand === selectedBrand;
+      
+      let matchesPrice = true;
       if (priceRange !== 'all') {
-        const [min, max] = priceRange.split('-').map(p => p.replace('+', ''));
-        const minPrice = parseFloat(min);
-        const maxPrice = max ? parseFloat(max) : Infinity;
-        
-        if (product.price < minPrice || product.price > maxPrice) {
-          return false;
+        const price = product.price;
+        switch (priceRange) {
+          case '0-25': matchesPrice = price <= 25; break;
+          case '25-50': matchesPrice = price > 25 && price <= 50; break;
+          case '50-100': matchesPrice = price > 50 && price <= 100; break;
+          case '100-200': matchesPrice = price > 100 && price <= 200; break;
+          case '200+': matchesPrice = price > 200; break;
         }
       }
-
-      return true;
+      
+      return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
     });
 
     // Sort products
-    filtered.sort((a, b) => {
+    return filtered.sort((a, b) => {
       switch (sortBy) {
         case 'price':
           return a.price - b.price;
@@ -121,8 +127,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false
           return 0;
       }
     });
-
-    return filtered;
   }, [products, searchTerm, selectedCategory, selectedBrand, priceRange, sortBy]);
 
   const handleViewDetails = (product: Product) => {
@@ -130,22 +134,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedProduct(null);
-  };
-
   const handleSearch = async () => {
-    if (searchTerm.trim()) {
-      setLastSearchTerm(searchTerm);
-      await searchProducts(searchTerm.trim());
-    } else {
-      await getCurrentDeals();
-    }
-  };
-
-  const handleQuickSearch = async (term: string) => {
-    setSearchTerm(term);
+    const term = searchTerm.trim() || 'gear';
     setLastSearchTerm(term);
     await searchProducts(term);
   };
@@ -165,288 +155,298 @@ const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false
   };
 
   return (
-    <>
-      <Header 
-        totalDeals={dashboardStats.totalDeals}
-        avgDiscount={dashboardStats.avgDiscount}
-        lastUpdate="Just now"
-        loading={loading}
-      />
-      
-      <div className="bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Error Alert */}
-          {error && (
-            <div className="mb-8 p-4 bg-red-50 border-l-4 border-red-200 text-red-700 rounded">
-              {error}
-            </div>
-          )}
-
-          {/* Control Panel */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Search Bar */}
-              <div className="flex-1 max-w-md">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input 
-                    type="text" 
-                    placeholder="Search deals..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="flex items-center space-x-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFilterOpen(!filterOpen)}
-                >
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filters
-                </Button>
-                
-                <select 
-                  value={sortBy} 
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="discount">Best Discount</option>
-                  <option value="price">Lowest Price</option>
-                  <option value="name">Name A-Z</option>
-                </select>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={loading}
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-
-            {/* Filter Panel */}
-            {filterOpen && (
-              <div className="mt-6 pt-6 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select 
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Categories</option>
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                  <select 
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Brands</option>
-                    {brands.map(brand => (
-                      <option key={brand} value={brand}>{brand}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
-                  <select 
-                    value={priceRange}
-                    onChange={(e) => setPriceRange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="all">All Prices</option>
-                    <option value="0-50">Under $50</option>
-                    <option value="50-100">$50 - $100</option>
-                    <option value="100-200">$100 - $200</option>
-                    <option value="200+">Over $200</option>
-                  </select>
-                </div>
-              </div>
-            )}
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              🛍️ All Deals
+            </h1>
+            <p className="text-gray-600">
+              Discover amazing deals on outdoor gear from top brands
+            </p>
           </div>
-
-          {/* Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-3">
-              {/* Results Header */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {loading ? 'Loading...' : `${filteredProducts.length} Deals Found`}
-                </h2>
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <span>Sorted by:</span>
-                  <Badge variant="secondary">
-                    {sortBy === 'discount' ? 'Best Discount' : sortBy === 'price' ? 'Lowest Price' : 'Name A-Z'}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Loading State */}
-              {loading && products.length === 0 && (
-                <div className="text-center py-24">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-500">Loading amazing deals...</p>
-                </div>
-              )}
-
-              {/* Products Grid */}
-              {products.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onViewDetails={handleViewDetails}
-                      showPriceIntelligence={showPriceIntelligence}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* No Results */}
-              {filteredProducts.length === 0 && !loading && products.length > 0 && (
-                <div className="text-center py-12">
-                  <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-gray-500">No products match your filters</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => {
-                      setSelectedCategory('all');
-                      setSelectedBrand('all');
-                      setPriceRange('all');
-                      setSearchTerm('');
-                    }}
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Stats */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center">
-                    <TrendingUp className="w-5 h-5 mr-2" />
-                    Quick Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Total Savings</span>
-                    <span className="font-semibold text-green-600">
-                      ${dashboardStats.totalSavings.toFixed(0)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Best Deal</span>
-                    <span className="font-semibold text-red-600">
-                      {dashboardStats.bestDeal}% off
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Categories</span>
-                    <span className="font-semibold">{categories.length}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Trending Categories */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center">
-                    <Star className="w-5 h-5 mr-2" />
-                    Trending
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {trendingCategories.map((category, index) => (
-                      <button
-                        key={category.name}
-                        onClick={() => setSelectedCategory(category.name)}
-                        className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded text-left"
-                      >
-                        <span className="text-sm">{category.name}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {category.count}
-                        </Badge>
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center">
-                    <DollarSign className="w-5 h-5 mr-2" />
-                    Quick Searches
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setSearchTerm('clearance');
-                      handleQuickSearch('clearance');
-                    }}
-                  >
-                    Clearance Items
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setSearchTerm('climbing shoes');
-                      handleQuickSearch('climbing shoes');
-                    }}
-                  >
-                    Climbing Shoes
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start"
-                    onClick={handleSearchDeals}
-                  >
-                    All Sale Items
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="text-right">
+            <div className="text-3xl font-bold text-blue-600">{filteredProducts.length}</div>
+            <div className="text-sm text-gray-500">deals available</div>
           </div>
         </div>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <div className="text-red-700">{error}</div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Deals</p>
+                <p className="text-2xl font-bold text-blue-600">{dashboardStats.totalDeals}</p>
+              </div>
+              <Package className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Avg. Discount</p>
+                <p className="text-2xl font-bold text-green-600">{dashboardStats.avgDiscount}%</p>
+              </div>
+              <Percent className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Categories</p>
+                <p className="text-2xl font-bold text-purple-600">{dashboardStats.categoriesCount}</p>
+              </div>
+              <Filter className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Best Deal</p>
+                <p className="text-2xl font-bold text-red-600">{dashboardStats.bestDeal}%</p>
+              </div>
+              <Star className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Search & Filter Deals
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search for products, brands, or categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Filter Row */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Brands</SelectItem>
+                  {brands.map(brand => (
+                    <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={priceRange} onValueChange={setPriceRange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Price Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Prices</SelectItem>
+                  <SelectItem value="0-25">$0 - $25</SelectItem>
+                  <SelectItem value="25-50">$25 - $50</SelectItem>
+                  <SelectItem value="50-100">$50 - $100</SelectItem>
+                  <SelectItem value="100-200">$100 - $200</SelectItem>
+                  <SelectItem value="200+">$200+</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="discount">Best Discount</SelectItem>
+                  <SelectItem value="price">Lowest Price</SelectItem>
+                  <SelectItem value="name">Name A-Z</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleRefresh}
+                  disabled={loading}
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Results Header and View Toggle */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {loading ? 'Loading...' : `${filteredProducts.length} Deals Found`}
+          </h2>
+          <p className="text-sm text-gray-500">
+            Sorted by {sortBy === 'discount' ? 'Best Discount' : sortBy === 'price' ? 'Lowest Price' : 'Name A-Z'}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+          >
+            <Grid3X3 className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+          >
+            <List className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {loading && products.length === 0 && (
+        <Card>
+          <CardContent className="py-24">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-500">Loading amazing deals...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Products Grid/List */}
+      {products.length > 0 && (
+        <div className={viewMode === 'grid' 
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+          : "space-y-4"
+        }>
+          {filteredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onViewDetails={handleViewDetails}
+              showPriceIntelligence={showPriceIntelligence}
+              viewMode={viewMode}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* No Results */}
+      {filteredProducts.length === 0 && !loading && products.length > 0 && (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+              <p className="text-gray-500 mb-4">Try adjusting your filters or search terms</p>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSelectedBrand('all');
+                  setPriceRange('all');
+                  setSearchTerm('');
+                }}
+              >
+                Clear All Filters
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Trending Categories */}
+      {trendingCategories.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Trending Categories
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {trendingCategories.map((category) => (
+                <div
+                  key={category.name}
+                  className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                  onClick={() => setSelectedCategory(category.name)}
+                >
+                  <div className="text-center">
+                    <p className="font-medium text-gray-900">{category.name}</p>
+                    <p className="text-sm text-gray-500">{category.count} deals</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Product Modal */}
       <ProductModal
         product={selectedProduct}
         isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => setIsModalOpen(false)}
       />
-    </>
+    </div>
   );
 };
 

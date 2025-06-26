@@ -4,9 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { TrendingUp, TrendingDown, Target, DollarSign, ShoppingCart, Star, Clock, ArrowUp, ArrowDown } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { TrendingUp, TrendingDown, Target, DollarSign, ShoppingCart, Star, Clock, ArrowUp, ArrowDown, Search, History } from 'lucide-react'
 import { usePriceIntelligence } from '@/hooks/usePriceIntelligence'
+import { useProducts } from '@/hooks/useProducts'
+import { usePriceHistory } from '@/hooks/usePriceHistory'
 import { ProductCard } from './ProductCard'
+import { PriceHistoryChart } from './PriceHistoryChart'
 
 interface PriceIntelligenceDashboardProps {
   className?: string
@@ -14,9 +19,15 @@ interface PriceIntelligenceDashboardProps {
 
 export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProps> = ({ className }) => {
   const { bestDeals, categoryInsights, loading, searchIntelligentDeals } = usePriceIntelligence()
+  const { products, loading: productsLoading, searchProducts, searchAllProducts, getAllProducts } = useProducts()
+  const { fetchPriceHistory, loading: historyLoading } = usePriceHistory()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [dealQualityFilter, setDealQualityFilter] = useState<string>('all')
   const [filteredDeals, setFilteredDeals] = useState(bestDeals)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [priceHistory, setPriceHistory] = useState<any>(null)
+  const [showPriceHistory, setShowPriceHistory] = useState(false)
 
   // Apply filters to deals
   const applyFilters = async () => {
@@ -41,6 +52,32 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
   React.useEffect(() => {
     applyFilters()
   }, [selectedCategory, dealQualityFilter, bestDeals])
+
+  // Load all products on component mount for the "All Products" tab
+  React.useEffect(() => {
+    getAllProducts()
+  }, [])
+
+  // Handle product selection for price history
+  const handleProductSelect = async (product: any) => {
+    setSelectedProduct(product)
+    setShowPriceHistory(true)
+    
+    // Fetch price history
+    const history = await fetchPriceHistory(product.sku || product.id, product.merchant_id || 18557)
+    if (history) {
+      setPriceHistory(history)
+    }
+  }
+
+  // Handle product search
+  const handleSearch = async () => {
+    if (searchTerm.trim()) {
+      await searchAllProducts(searchTerm)
+    } else {
+      await getAllProducts()
+    }
+  }
 
   // Calculate dashboard stats
   const dashboardStats = React.useMemo(() => {
@@ -143,63 +180,128 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Deals</p>
-                <p className="text-2xl font-bold">{dashboardStats.totalDeals}</p>
-              </div>
-              <ShoppingCart className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Excellent Deals</p>
-                <p className="text-2xl font-bold text-green-600">{dashboardStats.excellentDeals}</p>
-              </div>
-              <Star className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Great Prices</p>
-                <p className="text-2xl font-bold text-emerald-600">{dashboardStats.greatPriceDeals}</p>
-              </div>
-              <TrendingDown className="h-8 w-8 text-emerald-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Avg Discount</p>
-                <p className="text-2xl font-bold text-orange-600">{dashboardStats.avgDiscount}%</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="deals" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="all-products" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all-products">All Products</TabsTrigger>
           <TabsTrigger value="deals">Smart Deals</TabsTrigger>
           <TabsTrigger value="categories">Category Insights</TabsTrigger>
           <TabsTrigger value="trends">Market Trends</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="all-products" className="space-y-4">
+          {/* Search Bar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Browse All Products
+              </CardTitle>
+              <CardDescription>
+                Click on any product to view its complete price history
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    className="pl-10"
+                  />
+                </div>
+                <Button onClick={handleSearch} disabled={productsLoading}>
+                  {productsLoading ? 'Searching...' : 'Search'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Price History Modal */}
+          {showPriceHistory && priceHistory && (
+            <PriceHistoryChart 
+              priceHistory={priceHistory}
+              onClose={() => {
+                setShowPriceHistory(false)
+                setPriceHistory(null)
+              }}
+            />
+          )}
+
+          {/* Products Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {productsLoading ? (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-500">Loading products...</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-500">No products found. Try searching for something!</p>
+              </div>
+            ) : (
+              products.map((product) => (
+                <Card 
+                  key={product.id} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer border-gray-200"
+                  onClick={() => handleProductSelect(product)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-medium text-sm line-clamp-2 flex-1">{product.name}</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-2"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleProductSelect(product)
+                        }}
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {product.imageUrl && (
+                      <img 
+                        src={product.imageUrl} 
+                        alt={product.name}
+                        className="w-full h-32 object-cover rounded mb-3"
+                      />
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-lg font-bold">${product.price}</p>
+                        {product.originalPrice && product.originalPrice > product.price && (
+                          <p className="text-sm text-gray-500 line-through">
+                            ${product.originalPrice}
+                          </p>
+                        )}
+                      </div>
+                      {product.discount && (
+                        <Badge variant="secondary" className="bg-green-50 text-green-700">
+                          -{product.discount}%
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+                      <span>{product.merchant}</span>
+                      {product.category && (
+                        <>
+                          <span>•</span>
+                          <span>{product.category}</span>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
 
         <TabsContent value="deals" className="space-y-4">
           {/* Filters */}

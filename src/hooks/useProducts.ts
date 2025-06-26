@@ -12,6 +12,8 @@ interface UseProductsResult {
   getCurrentDeals: () => Promise<void>;
   getProductsByMerchant: (merchantId: number) => Promise<void>;
   searchProducts: (searchTerm: string) => Promise<void>;
+  searchAllProducts: (searchTerm: string) => Promise<void>;
+  getAllProducts: () => Promise<void>;
   refreshProducts: () => Promise<void>;
 }
 
@@ -46,8 +48,8 @@ export function useProducts(): UseProductsResult {
     id: dbProduct.sku, // Use SKU as ID for compatibility
     name: dbProduct.name,
     description: dbProduct.description || '',
-    price: dbProduct.sale_price || 0,
-    originalPrice: dbProduct.retail_price || undefined,
+    price: dbProduct.sale_price || dbProduct.retail_price || 0,
+    originalPrice: dbProduct.sale_price ? dbProduct.retail_price || undefined : undefined,
     imageUrl: dbProduct.image_url || '/placeholder.svg',
     affiliateUrl: dbProduct.buy_url || '#',
     merchant: dbProduct.merchant_name,
@@ -153,6 +155,65 @@ export function useProducts(): UseProductsResult {
     }
   }, [handleDatabaseError]);
 
+  const getAllProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: queryError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('last_sync_date', new Date().toISOString().split('T')[0])
+        .order('name', { ascending: true })
+        .limit(500);
+
+      if (queryError) {
+        throw queryError;
+      }
+
+      if (data) {
+        const transformedProducts = data.map(transformDatabaseProduct);
+        setProducts(transformedProducts);
+        setTotalProducts(data.length);
+        setError(null);
+      }
+    } catch (err) {
+      handleDatabaseError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [handleDatabaseError]);
+
+  const searchAllProducts = useCallback(async (searchTerm: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: queryError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('last_sync_date', new Date().toISOString().split('T')[0])
+        .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
+        .order('name', { ascending: true })
+        .limit(500);
+
+      if (queryError) {
+        throw queryError;
+      }
+
+      if (data) {
+        const transformedProducts = data.map(transformDatabaseProduct);
+        setProducts(transformedProducts);
+        setTotalProducts(data.length);
+        setError(null);
+      }
+    } catch (err) {
+      handleDatabaseError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [handleDatabaseError]);
+
   const refreshProducts = useCallback(async () => {
     await getCurrentDeals();
   }, [getCurrentDeals]);
@@ -170,6 +231,8 @@ export function useProducts(): UseProductsResult {
     getCurrentDeals,
     getProductsByMerchant,
     searchProducts,
+    searchAllProducts,
+    getAllProducts,
     refreshProducts
   };
 }

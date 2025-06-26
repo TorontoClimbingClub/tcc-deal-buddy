@@ -8,6 +8,8 @@ import ProductGrid from '../components/ProductGrid';
 import { PriceIntelligenceDashboard } from '../components/PriceIntelligenceDashboard';
 import Sidebar from '../components/Sidebar';
 import { usePriceAlerts } from '../hooks/usePriceAlerts';
+import { useDashboardStats } from '../hooks/useDashboardStats';
+import { useRecentActivity } from '../hooks/useRecentActivity';
 
 interface SavedFilter {
   id: string;
@@ -24,6 +26,8 @@ const Index = () => {
   const [selectedFilter, setSelectedFilter] = useState<SavedFilter | null>(null);
   const { getAlertStats } = usePriceAlerts();
   const alertStats = getAlertStats();
+  const dashboardStats = useDashboardStats();
+  const { activities, loading: activitiesLoading, error: activitiesError } = useRecentActivity();
 
   const handleFilterSelect = (filter: SavedFilter) => {
     setSelectedFilter(filter);
@@ -60,8 +64,7 @@ const Index = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Active Deals</p>
-                <p className="text-3xl font-bold text-blue-600">855</p>
-                <p className="text-xs text-green-600 mt-1">↗ +12% from last week</p>
+                <p className="text-3xl font-bold text-blue-600">{dashboardStats.loading ? '...' : dashboardStats.activeDeals.toLocaleString()}</p>
               </div>
               <Grid className="h-8 w-8 text-blue-500" />
             </div>
@@ -73,8 +76,7 @@ const Index = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Avg. Discount</p>
-                <p className="text-3xl font-bold text-green-600">23%</p>
-                <p className="text-xs text-green-600 mt-1">↗ +2% from last month</p>
+                <p className="text-3xl font-bold text-green-600">{dashboardStats.loading ? '...' : `${dashboardStats.averageDiscount}%`}</p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
             </div>
@@ -87,7 +89,6 @@ const Index = () => {
               <div>
                 <p className="text-sm text-gray-600">Price Alerts</p>
                 <p className="text-3xl font-bold text-purple-600">{alertStats.activeAlerts}</p>
-                <p className="text-xs text-purple-600 mt-1">3 triggered today</p>
               </div>
               <Bell className="h-8 w-8 text-purple-500" />
             </div>
@@ -99,8 +100,7 @@ const Index = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Products</p>
-                <p className="text-3xl font-bold text-orange-600">10.2K</p>
-                <p className="text-xs text-orange-600 mt-1">Updated hourly</p>
+                <p className="text-3xl font-bold text-orange-600">{dashboardStats.loading ? '...' : dashboardStats.totalProducts.toLocaleString()}</p>
               </div>
               <Activity className="h-8 w-8 text-orange-500" />
             </div>
@@ -119,31 +119,52 @@ const Index = () => {
             <CardDescription>Latest deals and price changes</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { item: "Black Diamond Harness", change: "-15%", time: "2 hours ago", type: "price_drop" },
-                { item: "Patagonia Down Jacket", change: "New Deal", time: "4 hours ago", type: "new_deal" },
-                { item: "Arc'teryx Pack", change: "-22%", time: "6 hours ago", type: "price_drop" },
-                { item: "Mammut Rope", change: "Alert Triggered", time: "1 day ago", type: "alert" }
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-sm">{activity.item}</p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
+            {activitiesLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg animate-pulse">
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-32"></div>
+                      <div className="h-3 bg-gray-200 rounded w-20"></div>
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded w-16"></div>
                   </div>
-                  <Badge 
-                    variant={activity.type === 'price_drop' ? 'default' : 'secondary'}
-                    className={
-                      activity.type === 'price_drop' ? 'bg-green-50 text-green-700' :
-                      activity.type === 'new_deal' ? 'bg-blue-50 text-blue-700' :
-                      'bg-purple-50 text-purple-700'
-                    }
-                  >
-                    {activity.change}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : activitiesError ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-2">Failed to load recent activity</p>
+                <p className="text-xs text-gray-400">{activitiesError}</p>
+              </div>
+            ) : activities.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500">No recent activity</p>
+                <p className="text-xs text-gray-400">New deals and price changes will appear here</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {activities.map((activity) => (
+                  <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">{activity.item}</p>
+                      <p className="text-xs text-gray-500">{activity.time}</p>
+                    </div>
+                    <Badge 
+                      variant={activity.type === 'price_drop' ? 'default' : 'secondary'}
+                      className={
+                        activity.type === 'price_drop' ? 'bg-green-50 text-green-700' :
+                        activity.type === 'new_deal' ? 'bg-blue-50 text-blue-700' :
+                        activity.type === 'sale_start' ? 'bg-orange-50 text-orange-700' :
+                        'bg-purple-50 text-purple-700'
+                      }
+                    >
+                      {activity.change}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

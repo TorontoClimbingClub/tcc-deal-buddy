@@ -1,9 +1,9 @@
 # CLAUDE UI MAP
 *Auto-generated component mapping for precise UI editing*
 
-**Last Updated:** 2025-06-26T13:21:43.403Z
+**Last Updated:** 2025-06-26T16:07:27.550Z
 **Project:** tcc-deal-buddy
-**Components Scanned:** 60
+**Components Scanned:** 61
 
 ## 🗺️ COMPONENT HIERARCHY
 
@@ -119,259 +119,399 @@
 - **Button** (line 249) - `button`
   - Context: `<Button`
 
-#### PriceIntelligenceDashboard
-**File:** `src/components/PriceIntelligenceDashboard.tsx`
-**Lines:** 387
+#### PriceHistoryChart
+**File:** `src/components/PriceHistoryChart.tsx`
+**Lines:** 208
 
 **Key Elements:**
-- **PriceIntelligenceDashboardProps** (line 15) - `priceintelligencedashboardprops`
+- **PriceHistoryChartProps** (line 12) - `pricehistorychartprops`
+  - Context: `export const PriceHistoryChart: React.FC<PriceHistoryChartProps> = ({ priceHisto...`
+- **Card** (line 54) - `card`
+  - Context: `<Card className="w-full">`
+- **CardHeader** (line 55) - `cardheader`
+  - Context: `<CardHeader>`
+- **CardTitle** (line 58) - `cardtitle`
+  - Context: `<CardTitle className="text-lg">{priceHistory.productName}</CardTitle>`
+- **CardDescription** (line 59) - `carddescription`
+  - Context: `<CardDescription className="flex items-center gap-2 mt-1">`
+- **CardContent** (line 70) - `cardcontent`
+  - Context: `<CardContent>`
+- **TrendingUp** (line 89) - `trendingup`
+  - Context: `<TrendingUp className="h-4 w-4 text-red-600" />`
+- **TrendingDown** (line 91) - `trendingdown`
+  - Context: `<TrendingDown className="h-4 w-4 text-green-600" />`
+- **Calendar** (line 185) - `calendar`
+  - Context: `<Calendar className="h-3 w-3 text-gray-400" />`
+- **Badge** (line 191) - `badge`
+  - Context: `<Badge variant="secondary" className="text-xs bg-green-50 text-green-700">`
+- **Badge** (line 196) - `badge`
+  - Context: `<Badge variant="secondary" className="text-xs">`
+
+#### PriceIntelligenceDashboard
+**File:** `src/components/PriceIntelligenceDashboard.tsx`
+**Lines:** 489
+
+**Key Elements:**
+- **PriceIntelligenceDashboardProps** (line 20) - `priceintelligencedashboardprops`
   - Context: `export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp...`
-- **Badge** (line 65) - `badge`
+- **Badge** (line 102) - `badge`
   - Context: `<Badge variant="secondary" className="bg-green-100 text-green-800">`
-- **TrendingDown** (line 66) - `trendingdown`
+- **TrendingDown** (line 103) - `trendingdown`
   - Context: `<TrendingDown className="h-3 w-3 mr-1" />`
-- **Badge** (line 72) - `badge`
+- **Badge** (line 109) - `badge`
   - Context: `<Badge variant="secondary" className="bg-blue-100 text-blue-800">`
-- **Target** (line 73) - `target`
+- **Target** (line 110) - `target`
   - Context: `<Target className="h-3 w-3 mr-1" />`
-- **Badge** (line 79) - `badge`
+- **Badge** (line 116) - `badge`
   - Context: `<Badge variant="outline">`
-- **TrendingUp** (line 80) - `trendingup`
+- **TrendingUp** (line 117) - `trendingup`
   - Context: `<TrendingUp className="h-3 w-3 mr-1" />`
-- **Badge** (line 86) - `badge`
+- **Badge** (line 123) - `badge`
   - Context: `<Badge variant="secondary" className="bg-purple-100 text-purple-800">`
-- **Star** (line 87) - `star`
+- **Star** (line 124) - `star`
   - Context: `<Star className="h-3 w-3 mr-1" />`
-- **Card** (line 130) - `card`
+- **Card** (line 167) - `card`
   - Context: `<Card key={i}>`
-- **CardContent** (line 131) - `cardcontent`
+- **CardContent** (line 168) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **Card** (line 148) - `card`
-  - Context: `<Card>`
-- **CardContent** (line 149) - `cardcontent`
-  - Context: `<CardContent className="p-6">`
-- **ShoppingCart** (line 155) - `shoppingcart`
-  - Context: `<ShoppingCart className="h-8 w-8 text-blue-500" />`
-- **Card** (line 160) - `card`
-  - Context: `<Card>`
-- **CardContent** (line 161) - `cardcontent`
-  - Context: `<CardContent className="p-6">`
-- **Star** (line 167) - `star`
-  - Context: `<Star className="h-8 w-8 text-green-500" />`
-- **Card** (line 172) - `card`
-  - Context: `<Card>`
-- **CardContent** (line 173) - `cardcontent`
-  - Context: `<CardContent className="p-6">`
-- **TrendingDown** (line 179) - `trendingdown`
-  - Context: `<TrendingDown className="h-8 w-8 text-emerald-500" />`
-- **Card** (line 184) - `card`
-  - Context: `<Card>`
-- **CardContent** (line 185) - `cardcontent`
-  - Context: `<CardContent className="p-6">`
-- **DollarSign** (line 191) - `dollarsign`
-  - Context: `<DollarSign className="h-8 w-8 text-orange-500" />`
-- **Tabs** (line 197) - `tabs`
-  - Context: `<Tabs defaultValue="deals" className="w-full">`
-- **TabsList** (line 198) - `tabslist`
-  - Context: `<TabsList className="grid w-full grid-cols-3">`
-- **TabsTrigger** (line 199) - `tabstrigger`
+- **Tabs** (line 183) - `tabs`
+  - Context: `<Tabs defaultValue="all-products" className="w-full">`
+- **TabsList** (line 184) - `tabslist`
+  - Context: `<TabsList className="grid w-full grid-cols-4">`
+- **TabsTrigger** (line 185) - `tabstrigger`
+  - Context: `<TabsTrigger value="all-products">All Products</TabsTrigger>`
+- **TabsTrigger** (line 186) - `tabstrigger`
   - Context: `<TabsTrigger value="deals">Smart Deals</TabsTrigger>`
-- **TabsTrigger** (line 200) - `tabstrigger`
+- **TabsTrigger** (line 187) - `tabstrigger`
   - Context: `<TabsTrigger value="categories">Category Insights</TabsTrigger>`
-- **TabsTrigger** (line 201) - `tabstrigger`
+- **TabsTrigger** (line 188) - `tabstrigger`
   - Context: `<TabsTrigger value="trends">Market Trends</TabsTrigger>`
-- **TabsContent** (line 204) - `tabscontent`
-  - Context: `<TabsContent value="deals" className="space-y-4">`
-- **Card** (line 206) - `card`
+- **TabsContent** (line 191) - `tabscontent`
+  - Context: `<TabsContent value="all-products" className="space-y-4">`
+- **Card** (line 193) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 207) - `cardheader`
+- **CardHeader** (line 194) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 208) - `cardtitle`
-  - Context: `<CardTitle>Filter Deals</CardTitle>`
-- **CardDescription** (line 209) - `carddescription`
+- **CardTitle** (line 195) - `cardtitle`
+  - Context: `<CardTitle className="flex items-center gap-2">`
+- **Search** (line 196) - `search`
+  - Context: `<Search className="h-5 w-5" />`
+- **CardDescription** (line 199) - `carddescription`
   - Context: `<CardDescription>`
-- **CardContent** (line 213) - `cardcontent`
+- **CardContent** (line 203) - `cardcontent`
   - Context: `<CardContent>`
-- **Select** (line 215) - `select`
-  - Context: `<Select value={selectedCategory} onValueChange={setSelectedCategory}>`
-- **SelectTrigger** (line 216) - `selecttrigger`
-  - Context: `<SelectTrigger className="w-[200px]">`
-- **SelectValue** (line 217) - `selectvalue`
-  - Context: `<SelectValue placeholder="Category" />`
-- **SelectContent** (line 219) - `selectcontent`
-  - Context: `<SelectContent>`
-- **SelectItem** (line 220) - `selectitem`
-  - Context: `<SelectItem value="all">All Categories</SelectItem>`
-- **SelectItem** (line 222) - `selectitem`
-  - Context: `<SelectItem key={category.category} value={category.category}>`
-- **Select** (line 229) - `select`
-  - Context: `<Select value={dealQualityFilter} onValueChange={setDealQualityFilter}>`
-- **SelectTrigger** (line 230) - `selecttrigger`
-  - Context: `<SelectTrigger className="w-[200px]">`
-- **SelectValue** (line 231) - `selectvalue`
-  - Context: `<SelectValue placeholder="Deal Quality" />`
-- **SelectContent** (line 233) - `selectcontent`
-  - Context: `<SelectContent>`
-- **SelectItem** (line 234) - `selectitem`
-  - Context: `<SelectItem value="all">All Qualities</SelectItem>`
-- **SelectItem** (line 235) - `selectitem`
-  - Context: `<SelectItem value="excellent">Excellent Deals (80%+)</SelectItem>`
-- **SelectItem** (line 236) - `selectitem`
-  - Context: `<SelectItem value="good">Good Deals (60%+)</SelectItem>`
-- **SelectItem** (line 237) - `selectitem`
-  - Context: `<SelectItem value="great_price">Great Prices Only</SelectItem>`
-- **Card** (line 247) - `card`
-  - Context: `<Card key={`${deal.sku}-${deal.merchant_id}`} className="overflow-hidden">`
-- **PriceTrendIndicator** (line 258) - `pricetrendindicator`
-  - Context: `<PriceTrendIndicator status={deal.price_trend_status} />`
-- **CardContent** (line 262) - `cardcontent`
+- **Search** (line 206) - `search`
+  - Context: `<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-...`
+- **Input** (line 207) - `input`
+  - Context: `<Input`
+- **Button** (line 215) - `button`
+  - Context: `<Button onClick={handleSearch} disabled={productsLoading}>`
+- **PriceHistoryChart** (line 224) - `pricehistorychart`
+  - Context: `<PriceHistoryChart`
+- **Card** (line 245) - `card`
+  - Context: `<Card`
+- **CardContent** (line 250) - `cardcontent`
   - Context: `<CardContent className="p-4">`
+- **Button** (line 253) - `button`
+  - Context: `<Button`
+- **History** (line 262) - `history`
+  - Context: `<History className="h-4 w-4" />`
 - **Badge** (line 284) - `badge`
-  - Context: `<Badge variant="destructive" className="text-xs">`
-- **DealQualityIndicator** (line 290) - `dealqualityindicator`
-  - Context: `<DealQualityIndicator score={deal.deal_quality_score} />`
-- **Button** (line 300) - `button`
-  - Context: `<Button size="sm" className="w-full" asChild>`
-- **TabsContent** (line 313) - `tabscontent`
-  - Context: `<TabsContent value="categories" className="space-y-4">`
-- **Card** (line 316) - `card`
-  - Context: `<Card key={`${category.category}-${category.subcategory}`}>`
-- **CardHeader** (line 317) - `cardheader`
-  - Context: `<CardHeader>`
-- **CardTitle** (line 318) - `cardtitle`
-  - Context: `<CardTitle className="text-lg">{category.category}</CardTitle>`
-- **CardDescription** (line 320) - `carddescription`
-  - Context: `<CardDescription>{category.subcategory}</CardDescription>`
-- **CardContent** (line 323) - `cardcontent`
-  - Context: `<CardContent>`
-- **Badge** (line 334) - `badge`
-  - Context: `<Badge variant="outline">`
-- **TabsContent** (line 367) - `tabscontent`
-  - Context: `<TabsContent value="trends" className="space-y-4">`
-- **Card** (line 368) - `card`
+  - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">`
+- **TabsContent** (line 306) - `tabscontent`
+  - Context: `<TabsContent value="deals" className="space-y-4">`
+- **Card** (line 308) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 369) - `cardheader`
+- **CardHeader** (line 309) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 370) - `cardtitle`
-  - Context: `<CardTitle>Market Trends</CardTitle>`
-- **CardDescription** (line 371) - `carddescription`
+- **CardTitle** (line 310) - `cardtitle`
+  - Context: `<CardTitle>Filter Deals</CardTitle>`
+- **CardDescription** (line 311) - `carddescription`
   - Context: `<CardDescription>`
-- **CardContent** (line 375) - `cardcontent`
+- **CardContent** (line 315) - `cardcontent`
   - Context: `<CardContent>`
-- **Clock** (line 377) - `clock`
+- **Select** (line 317) - `select`
+  - Context: `<Select value={selectedCategory} onValueChange={setSelectedCategory}>`
+- **SelectTrigger** (line 318) - `selecttrigger`
+  - Context: `<SelectTrigger className="w-[200px]">`
+- **SelectValue** (line 319) - `selectvalue`
+  - Context: `<SelectValue placeholder="Category" />`
+- **SelectContent** (line 321) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 322) - `selectitem`
+  - Context: `<SelectItem value="all">All Categories</SelectItem>`
+- **SelectItem** (line 324) - `selectitem`
+  - Context: `<SelectItem key={category.category} value={category.category}>`
+- **Select** (line 331) - `select`
+  - Context: `<Select value={dealQualityFilter} onValueChange={setDealQualityFilter}>`
+- **SelectTrigger** (line 332) - `selecttrigger`
+  - Context: `<SelectTrigger className="w-[200px]">`
+- **SelectValue** (line 333) - `selectvalue`
+  - Context: `<SelectValue placeholder="Deal Quality" />`
+- **SelectContent** (line 335) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 336) - `selectitem`
+  - Context: `<SelectItem value="all">All Qualities</SelectItem>`
+- **SelectItem** (line 337) - `selectitem`
+  - Context: `<SelectItem value="excellent">Excellent Deals (80%+)</SelectItem>`
+- **SelectItem** (line 338) - `selectitem`
+  - Context: `<SelectItem value="good">Good Deals (60%+)</SelectItem>`
+- **SelectItem** (line 339) - `selectitem`
+  - Context: `<SelectItem value="great_price">Great Prices Only</SelectItem>`
+- **Card** (line 349) - `card`
+  - Context: `<Card key={`${deal.sku}-${deal.merchant_id}`} className="overflow-hidden">`
+- **PriceTrendIndicator** (line 360) - `pricetrendindicator`
+  - Context: `<PriceTrendIndicator status={deal.price_trend_status} />`
+- **CardContent** (line 364) - `cardcontent`
+  - Context: `<CardContent className="p-4">`
+- **Badge** (line 386) - `badge`
+  - Context: `<Badge variant="destructive" className="text-xs">`
+- **DealQualityIndicator** (line 392) - `dealqualityindicator`
+  - Context: `<DealQualityIndicator score={deal.deal_quality_score} />`
+- **Button** (line 402) - `button`
+  - Context: `<Button size="sm" className="w-full" asChild>`
+- **TabsContent** (line 415) - `tabscontent`
+  - Context: `<TabsContent value="categories" className="space-y-4">`
+- **Card** (line 418) - `card`
+  - Context: `<Card key={`${category.category}-${category.subcategory}`}>`
+- **CardHeader** (line 419) - `cardheader`
+  - Context: `<CardHeader>`
+- **CardTitle** (line 420) - `cardtitle`
+  - Context: `<CardTitle className="text-lg">{category.category}</CardTitle>`
+- **CardDescription** (line 422) - `carddescription`
+  - Context: `<CardDescription>{category.subcategory}</CardDescription>`
+- **CardContent** (line 425) - `cardcontent`
+  - Context: `<CardContent>`
+- **Badge** (line 436) - `badge`
+  - Context: `<Badge variant="outline">`
+- **TabsContent** (line 469) - `tabscontent`
+  - Context: `<TabsContent value="trends" className="space-y-4">`
+- **Card** (line 470) - `card`
+  - Context: `<Card>`
+- **CardHeader** (line 471) - `cardheader`
+  - Context: `<CardHeader>`
+- **CardTitle** (line 472) - `cardtitle`
+  - Context: `<CardTitle>Market Trends</CardTitle>`
+- **CardDescription** (line 473) - `carddescription`
+  - Context: `<CardDescription>`
+- **CardContent** (line 477) - `cardcontent`
+  - Context: `<CardContent>`
+- **Clock** (line 479) - `clock`
   - Context: `<Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />`
 
 #### ProductCard
 **File:** `src/components/ProductCard.tsx`
-**Lines:** 283
+**Lines:** 388
 
 **Key Elements:**
-- **ProductCardProps** (line 47) - `productcardprops`
+- **ProductCardProps** (line 48) - `productcardprops`
   - Context: `const ProductCard: React.FC<ProductCardProps> = ({`
-- **Badge** (line 97) - `badge`
+- **Badge** (line 99) - `badge`
   - Context: `<Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">`
-- **TrendingDown** (line 98) - `trendingdown`
+- **TrendingDown** (line 100) - `trendingdown`
   - Context: `<TrendingDown className="h-3 w-3 mr-1" />`
-- **Badge** (line 104) - `badge`
+- **Badge** (line 106) - `badge`
   - Context: `<Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">`
-- **Target** (line 105) - `target`
+- **Target** (line 107) - `target`
   - Context: `<Target className="h-3 w-3 mr-1" />`
-- **Badge** (line 111) - `badge`
+- **Badge** (line 113) - `badge`
   - Context: `<Badge variant="outline" className="text-xs">`
-- **TrendingUp** (line 112) - `trendingup`
+- **TrendingUp** (line 114) - `trendingup`
   - Context: `<TrendingUp className="h-3 w-3 mr-1" />`
-- **Badge** (line 118) - `badge`
+- **Badge** (line 120) - `badge`
   - Context: `<Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">`
-- **Star** (line 119) - `star`
+- **Star** (line 121) - `star`
   - Context: `<Star className="h-3 w-3 mr-1" />`
-- **Badge** (line 174) - `badge`
-  - Context: `<Badge variant="destructive" className="text-xs">`
-- **PriceTrendIndicator** (line 178) - `pricetrendindicator`
-  - Context: `<PriceTrendIndicator />`
-- **Button** (line 185) - `button`
-  - Context: `<Button`
-- **Heart** (line 191) - `heart`
-  - Context: `<Heart`
-- **PriceAlertModal** (line 196) - `pricealertmodal`
-  - Context: `<PriceAlertModal`
-- **Button** (line 202) - `button`
-  - Context: `<Button`
-- **Bell** (line 207) - `bell`
-  - Context: `<Bell className="h-4 w-4 text-gray-500" />`
-- **DealQualityIndicator** (line 240) - `dealqualityindicator`
+- **Badge** (line 178) - `badge`
+  - Context: `<Badge variant="destructive" className="text-xs absolute -top-2 -right-2">`
+- **DealQualityIndicator** (line 206) - `dealqualityindicator`
   - Context: `<DealQualityIndicator />`
-- **Button** (line 269) - `button`
+- **PriceTrendIndicator** (line 207) - `pricetrendindicator`
+  - Context: `<PriceTrendIndicator />`
+- **Button** (line 228) - `button`
+  - Context: `<Button`
+- **Heart** (line 233) - `heart`
+  - Context: `<Heart`
+- **PriceAlertModal** (line 238) - `pricealertmodal`
+  - Context: `<PriceAlertModal`
+- **Button** (line 244) - `button`
+  - Context: `<Button size="sm" variant="outline">`
+- **Bell** (line 245) - `bell`
+  - Context: `<Bell className="h-4 w-4 text-gray-500" />`
+- **Button** (line 251) - `button`
+  - Context: `<Button`
+- **Badge** (line 283) - `badge`
+  - Context: `<Badge variant="destructive" className="text-xs">`
+- **PriceTrendIndicator** (line 287) - `pricetrendindicator`
+  - Context: `<PriceTrendIndicator />`
+- **Button** (line 294) - `button`
+  - Context: `<Button`
+- **Heart** (line 300) - `heart`
+  - Context: `<Heart`
+- **PriceAlertModal** (line 305) - `pricealertmodal`
+  - Context: `<PriceAlertModal`
+- **Button** (line 311) - `button`
+  - Context: `<Button`
+- **Bell** (line 316) - `bell`
+  - Context: `<Bell className="h-4 w-4 text-gray-500" />`
+- **DealQualityIndicator** (line 345) - `dealqualityindicator`
+  - Context: `<DealQualityIndicator />`
+- **Button** (line 374) - `button`
   - Context: `<Button`
 
 #### ProductGrid
 **File:** `src/components/ProductGrid.tsx`
-**Lines:** 454
+**Lines:** 453
 
 **Key Elements:**
-- **ProductGridProps** (line 15) - `productgridprops`
+- **ProductGridProps** (line 31) - `productgridprops`
   - Context: `const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false...`
-- **Product** (line 20) - `product`
+- **Product** (line 36) - `product`
   - Context: `const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);`
-- **Header** (line 169) - `header`
-  - Context: `<Header`
-- **Search** (line 191) - `search`
-  - Context: `<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-...`
-- **Button** (line 205) - `button`
-  - Context: `<Button`
-- **Filter** (line 210) - `filter`
-  - Context: `<Filter className="w-4 h-4 mr-2" />`
-- **Button** (line 224) - `button`
-  - Context: `<Button`
-- **RefreshCw** (line 230) - `refreshcw`
-  - Context: `<RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />`
-- **Badge** (line 296) - `badge`
-  - Context: `<Badge variant="secondary">`
-- **Loader2** (line 305) - `loader2`
-  - Context: `<Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />`
-- **ProductCard** (line 314) - `productcard`
-  - Context: `<ProductCard`
-- **ShoppingBag** (line 327) - `shoppingbag`
-  - Context: `<ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-300" />`
-- **Button** (line 329) - `button`
-  - Context: `<Button`
-- **Card** (line 348) - `card`
+- **Card** (line 179) - `card`
+  - Context: `<Card className="border-red-200 bg-red-50">`
+- **CardContent** (line 180) - `cardcontent`
+  - Context: `<CardContent className="p-4">`
+- **Card** (line 188) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 349) - `cardheader`
-  - Context: `<CardHeader>`
-- **CardTitle** (line 350) - `cardtitle`
-  - Context: `<CardTitle className="text-lg flex items-center">`
-- **TrendingUp** (line 351) - `trendingup`
-  - Context: `<TrendingUp className="w-5 h-5 mr-2" />`
-- **CardContent** (line 355) - `cardcontent`
-  - Context: `<CardContent className="space-y-4">`
-- **Card** (line 376) - `card`
+- **CardContent** (line 189) - `cardcontent`
+  - Context: `<CardContent className="p-6">`
+- **Package** (line 195) - `package`
+  - Context: `<Package className="h-8 w-8 text-blue-500" />`
+- **Card** (line 200) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 377) - `cardheader`
+- **CardContent** (line 201) - `cardcontent`
+  - Context: `<CardContent className="p-6">`
+- **Percent** (line 207) - `percent`
+  - Context: `<Percent className="h-8 w-8 text-green-500" />`
+- **Card** (line 212) - `card`
+  - Context: `<Card>`
+- **CardContent** (line 213) - `cardcontent`
+  - Context: `<CardContent className="p-6">`
+- **Filter** (line 219) - `filter`
+  - Context: `<Filter className="h-8 w-8 text-purple-500" />`
+- **Card** (line 224) - `card`
+  - Context: `<Card>`
+- **CardContent** (line 225) - `cardcontent`
+  - Context: `<CardContent className="p-6">`
+- **Star** (line 231) - `star`
+  - Context: `<Star className="h-8 w-8 text-red-500" />`
+- **Card** (line 238) - `card`
+  - Context: `<Card>`
+- **CardHeader** (line 239) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 378) - `cardtitle`
-  - Context: `<CardTitle className="text-lg flex items-center">`
-- **Star** (line 379) - `star`
-  - Context: `<Star className="w-5 h-5 mr-2" />`
-- **CardContent** (line 383) - `cardcontent`
+- **CardTitle** (line 240) - `cardtitle`
+  - Context: `<CardTitle className="flex items-center gap-2">`
+- **Search** (line 241) - `search`
+  - Context: `<Search className="h-5 w-5" />`
+- **CardContent** (line 245) - `cardcontent`
   - Context: `<CardContent>`
-- **Badge** (line 392) - `badge`
-  - Context: `<Badge variant="secondary" className="text-xs">`
-- **Card** (line 402) - `card`
+- **Search** (line 249) - `search`
+  - Context: `<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-...`
+- **Input** (line 250) - `input`
+  - Context: `<Input`
+- **Select** (line 261) - `select`
+  - Context: `<Select value={selectedCategory} onValueChange={setSelectedCategory}>`
+- **SelectTrigger** (line 262) - `selecttrigger`
+  - Context: `<SelectTrigger>`
+- **SelectValue** (line 263) - `selectvalue`
+  - Context: `<SelectValue placeholder="Category" />`
+- **SelectContent** (line 265) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 266) - `selectitem`
+  - Context: `<SelectItem value="all">All Categories</SelectItem>`
+- **SelectItem** (line 268) - `selectitem`
+  - Context: `<SelectItem key={cat} value={cat}>{cat}</SelectItem>`
+- **Select** (line 273) - `select`
+  - Context: `<Select value={selectedBrand} onValueChange={setSelectedBrand}>`
+- **SelectTrigger** (line 274) - `selecttrigger`
+  - Context: `<SelectTrigger>`
+- **SelectValue** (line 275) - `selectvalue`
+  - Context: `<SelectValue placeholder="Brand" />`
+- **SelectContent** (line 277) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 278) - `selectitem`
+  - Context: `<SelectItem value="all">All Brands</SelectItem>`
+- **SelectItem** (line 280) - `selectitem`
+  - Context: `<SelectItem key={brand} value={brand}>{brand}</SelectItem>`
+- **Select** (line 285) - `select`
+  - Context: `<Select value={priceRange} onValueChange={setPriceRange}>`
+- **SelectTrigger** (line 286) - `selecttrigger`
+  - Context: `<SelectTrigger>`
+- **SelectValue** (line 287) - `selectvalue`
+  - Context: `<SelectValue placeholder="Price Range" />`
+- **SelectContent** (line 289) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 290) - `selectitem`
+  - Context: `<SelectItem value="all">All Prices</SelectItem>`
+- **SelectItem** (line 291) - `selectitem`
+  - Context: `<SelectItem value="0-25">$0 - $25</SelectItem>`
+- **SelectItem** (line 292) - `selectitem`
+  - Context: `<SelectItem value="25-50">$25 - $50</SelectItem>`
+- **SelectItem** (line 293) - `selectitem`
+  - Context: `<SelectItem value="50-100">$50 - $100</SelectItem>`
+- **SelectItem** (line 294) - `selectitem`
+  - Context: `<SelectItem value="100-200">$100 - $200</SelectItem>`
+- **SelectItem** (line 295) - `selectitem`
+  - Context: `<SelectItem value="200+">$200+</SelectItem>`
+- **Select** (line 299) - `select`
+  - Context: `<Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>`
+- **SelectTrigger** (line 300) - `selecttrigger`
+  - Context: `<SelectTrigger>`
+- **SelectValue** (line 301) - `selectvalue`
+  - Context: `<SelectValue placeholder="Sort By" />`
+- **SelectContent** (line 303) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 304) - `selectitem`
+  - Context: `<SelectItem value="discount">Best Discount</SelectItem>`
+- **SelectItem** (line 305) - `selectitem`
+  - Context: `<SelectItem value="price">Lowest Price</SelectItem>`
+- **SelectItem** (line 306) - `selectitem`
+  - Context: `<SelectItem value="name">Name A-Z</SelectItem>`
+- **Button** (line 311) - `button`
+  - Context: `<Button`
+- **Loader2** (line 317) - `loader2`
+  - Context: `{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4...`
+- **Search** (line 317) - `search`
+  - Context: `{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4...`
+- **Button** (line 319) - `button`
+  - Context: `<Button`
+- **RefreshCw** (line 324) - `refreshcw`
+  - Context: `<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />`
+- **Button** (line 344) - `button`
+  - Context: `<Button`
+- **Grid3X3** (line 349) - `grid3x3`
+  - Context: `<Grid3X3 className="w-4 h-4" />`
+- **Button** (line 351) - `button`
+  - Context: `<Button`
+- **List** (line 356) - `list`
+  - Context: `<List className="w-4 h-4" />`
+- **Card** (line 363) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 403) - `cardheader`
+- **CardContent** (line 364) - `cardcontent`
+  - Context: `<CardContent className="py-24">`
+- **Loader2** (line 366) - `loader2`
+  - Context: `<Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gray-400" />`
+- **ProductCard** (line 380) - `productcard`
+  - Context: `<ProductCard`
+- **Card** (line 393) - `card`
+  - Context: `<Card>`
+- **CardContent** (line 394) - `cardcontent`
+  - Context: `<CardContent className="py-12">`
+- **ShoppingBag** (line 396) - `shoppingbag`
+  - Context: `<ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-300" />`
+- **Button** (line 399) - `button`
+  - Context: `<Button`
+- **Card** (line 417) - `card`
+  - Context: `<Card>`
+- **CardHeader** (line 418) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 404) - `cardtitle`
-  - Context: `<CardTitle className="text-lg flex items-center">`
-- **DollarSign** (line 405) - `dollarsign`
-  - Context: `<DollarSign className="w-5 h-5 mr-2" />`
-- **CardContent** (line 409) - `cardcontent`
-  - Context: `<CardContent className="space-y-2">`
-- **Button** (line 410) - `button`
-  - Context: `<Button`
-- **Button** (line 420) - `button`
-  - Context: `<Button`
-- **Button** (line 430) - `button`
-  - Context: `<Button`
+- **CardTitle** (line 419) - `cardtitle`
+  - Context: `<CardTitle className="flex items-center gap-2">`
+- **TrendingUp** (line 420) - `trendingup`
+  - Context: `<TrendingUp className="h-5 w-5" />`
+- **CardContent** (line 424) - `cardcontent`
+  - Context: `<CardContent>`
 - **ProductModal** (line 444) - `productmodal`
   - Context: `<ProductModal`
 
@@ -473,63 +613,63 @@
 
 #### Sidebar
 **File:** `src/components/Sidebar.tsx`
-**Lines:** 240
+**Lines:** 242
 
 **Key Elements:**
-- **SidebarProps** (line 39) - `sidebarprops`
+- **SidebarProps** (line 40) - `sidebarprops`
   - Context: `const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, onFilterSel...`
-- **SavedFilter** (line 40) - `savedfilter`
+- **SavedFilter** (line 42) - `savedfilter`
   - Context: `const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([`
-- **Search** (line 83) - `search`
+- **Search** (line 85) - `search`
   - Context: `<Search className="h-5 w-5 text-white" />`
-- **ScrollArea** (line 92) - `scrollarea`
+- **ScrollArea** (line 94) - `scrollarea`
   - Context: `<ScrollArea className="flex-1">`
-- **Button** (line 104) - `button`
+- **Button** (line 106) - `button`
   - Context: `<Button`
-- **Icon** (line 114) - `icon`
+- **Icon** (line 116) - `icon`
   - Context: `<Icon className="h-4 w-4 mr-3" />`
-- **Badge** (line 117) - `badge`
+- **Badge** (line 119) - `badge`
   - Context: `<Badge variant="secondary" className="text-xs">`
-- **Separator** (line 127) - `separator`
+- **Separator** (line 129) - `separator`
   - Context: `<Separator className="mx-4" />`
-- **Button** (line 135) - `button`
+- **Button** (line 137) - `button`
   - Context: `<Button`
-- **Plus** (line 141) - `plus`
+- **Plus** (line 143) - `plus`
   - Context: `<Plus className="h-3 w-3" />`
-- **Card** (line 147) - `card`
+- **Card** (line 149) - `card`
   - Context: `<Card className="mb-3 border-dashed">`
-- **CardContent** (line 148) - `cardcontent`
+- **CardContent** (line 150) - `cardcontent`
   - Context: `<CardContent className="p-3">`
-- **Input** (line 150) - `input`
+- **Input** (line 152) - `input`
   - Context: `<Input`
-- **Button** (line 157) - `button`
+- **Button** (line 159) - `button`
   - Context: `<Button size="sm" onClick={handleSaveCurrentFilter} className="h-8 px-2">`
-- **Plus** (line 158) - `plus`
+- **Plus** (line 160) - `plus`
   - Context: `<Plus className="h-3 w-3" />`
-- **Card** (line 171) - `card`
+- **Card** (line 173) - `card`
   - Context: `<Card key={filter.id} className="border-gray-100 hover:border-blue-200 transitio...`
-- **CardContent** (line 172) - `cardcontent`
+- **CardContent** (line 174) - `cardcontent`
   - Context: `<CardContent className="p-3">`
-- **Filter** (line 180) - `filter`
+- **Filter** (line 182) - `filter`
   - Context: `<Filter className="h-3 w-3 text-gray-400" />`
-- **Tag** (line 186) - `tag`
+- **Tag** (line 188) - `tag`
   - Context: `<Tag className="h-3 w-3" />`
-- **Badge** (line 189) - `badge`
+- **Badge** (line 191) - `badge`
   - Context: `<Badge variant="outline" className="text-xs h-4">Sale</Badge>`
-- **Button** (line 194) - `button`
+- **Button** (line 196) - `button`
   - Context: `<Button`
-- **X** (line 200) - `x`
+- **X** (line 202) - `x`
   - Context: `<X className="h-3 w-3" />`
-- **Separator** (line 209) - `separator`
+- **Separator** (line 211) - `separator`
   - Context: `<Separator className="mx-4" />`
-- **Badge** (line 219) - `badge`
-  - Context: `<Badge variant="secondary">10,247</Badge>`
-- **Badge** (line 223) - `badge`
-  - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">855</Badge>`
-- **Badge** (line 227) - `badge`
-  - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700">3</Badge>`
-- **Badge** (line 231) - `badge`
-  - Context: `<Badge variant="secondary" className="bg-purple-50 text-purple-700">23%</Badge>`
+- **Badge** (line 221) - `badge`
+  - Context: `<Badge variant="secondary">{dashboardStats.loading ? '...' : dashboardStats.tota...`
+- **Badge** (line 225) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">{dashboardStat...`
+- **Badge** (line 229) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700">0</Badge>`
+- **Badge** (line 233) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-purple-50 text-purple-700">{dashboardSt...`
 
 ### 📁 src/components/ui/
 
@@ -1473,38 +1613,38 @@
 
 #### Index
 **File:** `src/pages/Index.tsx`
-**Lines:** 298
+**Lines:** 319
 
 **Key Elements:**
-- **SavedFilter** (line 24) - `savedfilter`
+- **SavedFilter** (line 26) - `savedfilter`
   - Context: `const [selectedFilter, setSelectedFilter] = useState<SavedFilter | null>(null);`
-- **Badge** (line 44) - `badge`
+- **Badge** (line 48) - `badge`
   - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700">`
-- **Badge** (line 47) - `badge`
+- **Badge** (line 51) - `badge`
   - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">`
-- **Badge** (line 50) - `badge`
+- **Badge** (line 54) - `badge`
   - Context: `<Badge variant="secondary" className="bg-purple-50 text-purple-700">`
-- **Card** (line 58) - `card`
+- **Card** (line 62) - `card`
   - Context: `<Card>`
-- **CardContent** (line 59) - `cardcontent`
+- **CardContent** (line 63) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **Grid** (line 66) - `grid`
+- **Grid** (line 69) - `grid`
   - Context: `<Grid className="h-8 w-8 text-blue-500" />`
-- **Card** (line 71) - `card`
+- **Card** (line 74) - `card`
   - Context: `<Card>`
-- **CardContent** (line 72) - `cardcontent`
+- **CardContent** (line 75) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **DollarSign** (line 79) - `dollarsign`
+- **DollarSign** (line 81) - `dollarsign`
   - Context: `<DollarSign className="h-8 w-8 text-green-500" />`
-- **Card** (line 84) - `card`
+- **Card** (line 86) - `card`
   - Context: `<Card>`
-- **CardContent** (line 85) - `cardcontent`
+- **CardContent** (line 87) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **Bell** (line 92) - `bell`
+- **Bell** (line 93) - `bell`
   - Context: `<Bell className="h-8 w-8 text-purple-500" />`
-- **Card** (line 97) - `card`
+- **Card** (line 98) - `card`
   - Context: `<Card>`
-- **CardContent** (line 98) - `cardcontent`
+- **CardContent** (line 99) - `cardcontent`
   - Context: `<CardContent className="p-6">`
 - **Activity** (line 105) - `activity`
   - Context: `<Activity className="h-8 w-8 text-orange-500" />`
@@ -1520,75 +1660,77 @@
   - Context: `<CardDescription>Latest deals and price changes</CardDescription>`
 - **CardContent** (line 121) - `cardcontent`
   - Context: `<CardContent>`
-- **Badge** (line 134) - `badge`
+- **Calendar** (line 141) - `calendar`
+  - Context: `<Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />`
+- **Badge** (line 153) - `badge`
   - Context: `<Badge`
-- **Card** (line 150) - `card`
+- **Card** (line 171) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 151) - `cardheader`
+- **CardHeader** (line 172) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 152) - `cardtitle`
+- **CardTitle** (line 173) - `cardtitle`
   - Context: `<CardTitle className="flex items-center gap-2">`
-- **TrendingUp** (line 153) - `trendingup`
+- **TrendingUp** (line 174) - `trendingup`
   - Context: `<TrendingUp className="h-5 w-5" />`
-- **CardDescription** (line 156) - `carddescription`
+- **CardDescription** (line 177) - `carddescription`
   - Context: `<CardDescription>Popular deals this week</CardDescription>`
-- **CardContent** (line 158) - `cardcontent`
+- **CardContent** (line 179) - `cardcontent`
   - Context: `<CardContent>`
-- **Badge** (line 172) - `badge`
+- **Badge** (line 193) - `badge`
   - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">`
-- **Card** (line 193) - `card`
+- **Card** (line 214) - `card`
   - Context: `<Card className="border-blue-200 bg-blue-50">`
-- **CardContent** (line 194) - `cardcontent`
+- **CardContent** (line 215) - `cardcontent`
   - Context: `<CardContent className="p-4">`
-- **Button** (line 200) - `button`
+- **Button** (line 221) - `button`
   - Context: `<Button`
-- **ProductGrid** (line 211) - `productgrid`
+- **ProductGrid** (line 232) - `productgrid`
   - Context: `<ProductGrid />`
-- **PriceIntelligenceDashboard** (line 215) - `priceintelligencedashboard`
+- **PriceIntelligenceDashboard** (line 236) - `priceintelligencedashboard`
   - Context: `return <PriceIntelligenceDashboard />;`
-- **Card** (line 218) - `card`
+- **Card** (line 239) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 219) - `cardheader`
+- **CardHeader** (line 240) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 220) - `cardtitle`
+- **CardTitle** (line 241) - `cardtitle`
   - Context: `<CardTitle>Price Alerts</CardTitle>`
-- **CardDescription** (line 221) - `carddescription`
+- **CardDescription** (line 242) - `carddescription`
   - Context: `<CardDescription>Manage your price tracking alerts</CardDescription>`
-- **CardContent** (line 223) - `cardcontent`
+- **CardContent** (line 244) - `cardcontent`
   - Context: `<CardContent>`
-- **Bell** (line 225) - `bell`
+- **Bell** (line 246) - `bell`
   - Context: `<Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />`
-- **Button** (line 230) - `button`
+- **Button** (line 251) - `button`
   - Context: `<Button>Create Your First Alert</Button>`
-- **Card** (line 237) - `card`
+- **Card** (line 258) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 238) - `cardheader`
+- **CardHeader** (line 259) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 239) - `cardtitle`
+- **CardTitle** (line 260) - `cardtitle`
   - Context: `<CardTitle>Favorite Products</CardTitle>`
-- **CardDescription** (line 240) - `carddescription`
+- **CardDescription** (line 261) - `carddescription`
   - Context: `<CardDescription>Your saved items and wishlist</CardDescription>`
-- **CardContent** (line 242) - `cardcontent`
+- **CardContent** (line 263) - `cardcontent`
   - Context: `<CardContent>`
-- **Star** (line 244) - `star`
+- **Star** (line 265) - `star`
   - Context: `<Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />`
-- **Button** (line 249) - `button`
+- **Button** (line 270) - `button`
   - Context: `<Button onClick={() => setActiveView('deals')}>Browse Deals</Button>`
-- **Card** (line 256) - `card`
+- **Card** (line 277) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 257) - `cardheader`
+- **CardHeader** (line 278) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 258) - `cardtitle`
+- **CardTitle** (line 279) - `cardtitle`
   - Context: `<CardTitle>Trending Deals</CardTitle>`
-- **CardDescription** (line 259) - `carddescription`
+- **CardDescription** (line 280) - `carddescription`
   - Context: `<CardDescription>Most popular deals this week</CardDescription>`
-- **CardContent** (line 261) - `cardcontent`
+- **CardContent** (line 282) - `cardcontent`
   - Context: `<CardContent>`
-- **TrendingUp** (line 263) - `trendingup`
+- **TrendingUp** (line 284) - `trendingup`
   - Context: `<TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />`
-- **Sidebar** (line 280) - `sidebar`
+- **Sidebar** (line 301) - `sidebar`
   - Context: `<Sidebar`
-- **ScrollArea** (line 288) - `scrollarea`
+- **ScrollArea** (line 309) - `scrollarea`
   - Context: `<ScrollArea className="h-full">`
 
 #### NotFound

@@ -259,10 +259,11 @@ class AvantLinkService {
    */
   async getPopularProducts(category?: string): Promise<AvantLinkApiResponse> {
     return this.searchProducts({
-      searchTerm: category || 'popular',
+      searchTerm: category || '*',
+      merchantIds: ['18557'], // MEC merchant ID
       sortBy: 'Match Score',
       sortOrder: 'desc',
-      resultsPerPage: 20
+      resultsPerPage: 50
     });
   }
 
@@ -271,10 +272,11 @@ class AvantLinkService {
    */
   async getProductsByCategory(category: string, page = 1): Promise<AvantLinkApiResponse> {
     return this.searchProducts({
-      searchTerm: category,
+      searchTerm: category || '*',
+      merchantIds: ['18557'], // MEC merchant ID
       category,
       page,
-      resultsPerPage: 20,
+      resultsPerPage: 50,
       sortBy: 'Match Score',
       sortOrder: 'desc'
     });

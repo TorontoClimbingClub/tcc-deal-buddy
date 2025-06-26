@@ -88,9 +88,9 @@ export function useAvantLink(): UseAvantLinkResult {
   const loadPopularProducts = useCallback(async () => {
     console.log('🌟 Load Popular Products called');
     await handleApiCall(() => avantLinkService.searchProducts({
-      searchTerm: 'outdoor gear',
-      onSaleOnly: true,
-      resultsPerPage: 20
+      searchTerm: '*',
+      merchantIds: ['18557'], // MEC merchant ID
+      resultsPerPage: 50
     }));
   }, [handleApiCall]);
 

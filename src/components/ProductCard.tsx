@@ -42,12 +42,14 @@ interface ProductCardProps {
   product: Product;
   onViewDetails: (product: Product) => void;
   showPriceIntelligence?: boolean;
+  viewMode?: 'grid' | 'list';
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ 
   product, 
   onViewDetails, 
-  showPriceIntelligence = false 
+  showPriceIntelligence = false,
+  viewMode = 'grid'
 }) => {
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
   const { getProductPriceRecommendations } = usePriceIntelligence();
@@ -155,13 +157,120 @@ const ProductCard: React.FC<ProductCardProps> = ({
     );
   };
 
+  if (viewMode === 'list') {
+    return (
+      <div className="group cursor-pointer bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+        <div className="flex p-4 gap-4">
+          {/* Image */}
+          <div className="relative flex-shrink-0" onClick={() => onViewDetails(product)}>
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="w-24 h-24 object-cover bg-gray-100 rounded-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/placeholder-product.svg';
+              }}
+            />
+            
+            {/* Discount badge */}
+            {discountPercent && discountPercent > 0 && (
+              <Badge variant="destructive" className="text-xs absolute -top-2 -right-2">
+                -{discountPercent}%
+              </Badge>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                {/* Brand and merchant */}
+                <div className="flex items-center gap-2 mb-1">
+                  {brandName && (
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">
+                      {brandName}
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-400">{merchantName}</span>
+                </div>
+
+                {/* Product name */}
+                <h3 className="text-gray-900 font-medium group-hover:text-gray-700 transition-colors text-sm mb-2 line-clamp-2">
+                  {product.name}
+                </h3>
+
+                {/* Price intelligence info */}
+                {showPriceIntelligence && (
+                  <div className="mb-2 flex items-center gap-2">
+                    <DealQualityIndicator />
+                    <PriceTrendIndicator />
+                  </div>
+                )}
+
+                {/* Pricing */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg font-bold text-gray-900">
+                    ${currentPrice.toFixed(2)}
+                  </span>
+                  {originalPrice && isOnSale && (
+                    <span className="text-sm text-gray-500 line-through">
+                      ${originalPrice.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 ml-4">
+                {product.sku && product.merchant_id && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleFavoriteToggle}
+                    >
+                      <Heart 
+                        className={`h-4 w-4 ${isFav ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} 
+                      />
+                    </Button>
+
+                    <PriceAlertModal
+                      productSku={product.sku}
+                      merchantId={product.merchant_id}
+                      productName={product.name}
+                      currentPrice={currentPrice}
+                    >
+                      <Button size="sm" variant="outline">
+                        <Bell className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </PriceAlertModal>
+                  </>
+                )}
+                
+                <Button
+                  onClick={handleAffiliateClick}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Buy Now
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Grid view (default)
   return (
     <div className="group cursor-pointer bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
       <div className="relative mb-4" onClick={() => onViewDetails(product)}>
         <img
           src={imageUrl}
           alt={product.name}
-          className="w-full h-64 object-cover bg-gray-100 rounded-t-lg"
+          className="w-full h-48 object-cover bg-gray-100 rounded-t-lg"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.src = '/placeholder-product.svg';
@@ -225,11 +334,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Product name */}
         <div className="mb-3">
-          <h3 className="text-gray-900 font-normal group-hover:text-gray-700 transition-colors text-sm overflow-hidden" style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical'
-          }}>
+          <h3 className="text-gray-900 font-medium group-hover:text-gray-700 transition-colors text-sm overflow-hidden line-clamp-2">
             {product.name}
           </h3>
         </div>

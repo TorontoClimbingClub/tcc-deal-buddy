@@ -19,6 +19,7 @@ import {
   Calendar,
   BarChart3
 } from 'lucide-react';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
 interface SavedFilter {
   id: string;
@@ -37,6 +38,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, onFilterSelect }) => {
+  const dashboardStats = useDashboardStats();
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([
     { id: '1', name: 'Climbing Gear Sale', category: 'Climbing', onSale: true, count: 127 },
     { id: '2', name: 'Budget Finds', priceRange: { min: 0, max: 50 }, count: 89 },
@@ -50,11 +52,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, onFilterSel
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, count: null },
-    { id: 'deals', label: 'All Deals', icon: ShoppingCart, count: 855 },
+    { id: 'deals', label: 'All Deals', icon: ShoppingCart, count: null },
     { id: 'intelligence', label: 'Price Intelligence', icon: BarChart3, count: null },
-    { id: 'alerts', label: 'My Alerts', icon: Bell, count: 3 },
-    { id: 'favorites', label: 'Favorites', icon: Star, count: 12 },
-    { id: 'trending', label: 'Trending', icon: TrendingUp, count: 28 }
+    { id: 'alerts', label: 'My Alerts', icon: Bell, count: null },
+    { id: 'favorites', label: 'Favorites', icon: Star, count: null },
+    { id: 'trending', label: 'Trending', icon: TrendingUp, count: null }
   ];
 
   const handleSaveCurrentFilter = () => {
@@ -216,19 +218,19 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, onFilterSel
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Total Products</span>
-              <Badge variant="secondary">10,247</Badge>
+              <Badge variant="secondary">{dashboardStats.loading ? '...' : dashboardStats.totalProducts.toLocaleString()}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">On Sale</span>
-              <Badge variant="secondary" className="bg-green-50 text-green-700">855</Badge>
+              <Badge variant="secondary" className="bg-green-50 text-green-700">{dashboardStats.loading ? '...' : dashboardStats.activeDeals.toLocaleString()}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Price Alerts</span>
-              <Badge variant="secondary" className="bg-blue-50 text-blue-700">3</Badge>
+              <Badge variant="secondary" className="bg-blue-50 text-blue-700">0</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Avg. Discount</span>
-              <Badge variant="secondary" className="bg-purple-50 text-purple-700">23%</Badge>
+              <Badge variant="secondary" className="bg-purple-50 text-purple-700">{dashboardStats.loading ? '...' : `${dashboardStats.averageDiscount}%`}</Badge>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { useGlobalFilters } from '../contexts/FilterContext';
 import { Product } from '../components/ProductCard';
@@ -91,9 +92,9 @@ export const useFilteredProducts = (products: Product[]): FilteredProductsResult
           return a.name.localeCompare(b.name);
         
         case 'date':
-          // For date sorting, we'll use created_at if available, otherwise maintain current order
-          const dateA = new Date(a.created_at || 0).getTime();
-          const dateB = new Date(b.created_at || 0).getTime();
+          // For date sorting, use a fallback since created_at might not exist on Product type
+          const dateA = (a as any).created_at ? new Date((a as any).created_at).getTime() : 0;
+          const dateB = (b as any).created_at ? new Date((b as any).created_at).getTime() : 0;
           return dateB - dateA;
         
         default:

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { AvantLinkProduct } from './avantlink';
 import { categoryValidationService } from './categoryValidation';
@@ -105,6 +106,33 @@ function transformAvantLinkProduct(product: AvantLinkProduct): ProductData {
     description: longDescription || abbreviatedDescription || shortDescription,
     category: getOptimalCategory(subcategoryName, categoryName, departmentName),
     subcategory: subcategoryName // Keep subcategory field for reference
+  };
+}
+
+/**
+ * Transform ProductData to Product UI format
+ */
+function transformProductDataToProduct(productData: ProductData): any {
+  return {
+    id: `${productData.sku}-${productData.merchant_id}`,
+    sku: productData.sku,
+    name: productData.name,
+    brand: productData.brand_name,
+    brand_name: productData.brand_name,
+    category: productData.category || 'General',
+    description: productData.description || '',
+    price: productData.retail_price || productData.sale_price || 0,
+    sale_price: productData.sale_price,
+    retail_price: productData.retail_price,
+    discount_percent: productData.discount_percent,
+    discount: productData.discount_percent,
+    imageUrl: productData.image_url,
+    image_url: productData.image_url,
+    affiliateUrl: productData.buy_url,
+    buy_url: productData.buy_url,
+    merchant: productData.merchant_name || 'Unknown',
+    merchant_name: productData.merchant_name,
+    merchant_id: productData.merchant_id
   };
 }
 
@@ -258,7 +286,7 @@ export async function dailyFullSync(): Promise<{
             try {
               const transformedProducts = apiResponse.products
                 .filter(validateProduct)
-                .map(transformProductForUI);
+                .map(transformProductDataToProduct);
               categoryValidationService.validateCategories(transformedProducts);
             } catch (categoryError) {
               console.warn('⚠️ Failed to update category validation:', categoryError);
@@ -329,7 +357,7 @@ export async function dailyFullSync(): Promise<{
             try {
               const transformedProducts = apiResponse.products
                 .filter(validateProduct)
-                .map(transformProductForUI);
+                .map(transformProductDataToProduct);
               categoryValidationService.validateCategories(transformedProducts);
             } catch (categoryError) {
               console.warn('⚠️ Failed to update category validation:', categoryError);
@@ -475,7 +503,7 @@ export async function syncMerchantProducts(merchantIds: string[], merchantName: 
           try {
             const transformedProducts = apiResponse.products
               .filter(validateProduct)
-              .map(transformAvantLinkProduct);
+              .map(transformProductDataToProduct);
             categoryValidationService.validateCategories(transformedProducts);
           } catch (categoryError) {
             console.warn('⚠️ Failed to update category validation:', categoryError);
@@ -602,7 +630,7 @@ export async function syncSaleProducts(searchTerm = 'sale', merchantIds?: string
       try {
         const transformedProducts = apiResponse.products
           .filter(validateProduct)
-          .map(transformAvantLinkProduct);
+          .map(transformProductDataToProduct);
         categoryValidationService.validateCategories(transformedProducts);
         console.log('📊 Category validation updated after sync');
       } catch (categoryError) {

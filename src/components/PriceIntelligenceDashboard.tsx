@@ -19,6 +19,32 @@ interface PriceIntelligenceDashboardProps {
   className?: string
 }
 
+// Transform BestDeal to Product interface for compatibility
+const transformBestDealToProduct = (deal: any) => ({
+  id: `${deal.sku}-${deal.merchant_id}`,
+  sku: deal.sku,
+  name: deal.name,
+  brand: deal.brand_name,
+  brand_name: deal.brand_name,
+  category: deal.category || 'General',
+  description: deal.description || '',
+  price: deal.retail_price || deal.sale_price || 0,
+  sale_price: deal.sale_price,
+  retail_price: deal.retail_price,
+  discount_percent: deal.discount_percent,
+  discount: deal.discount_percent,
+  imageUrl: deal.image_url,
+  image_url: deal.image_url,
+  affiliateUrl: deal.buy_url,
+  buy_url: deal.buy_url,
+  merchant: deal.merchant_name || 'Unknown',
+  merchant_name: deal.merchant_name,
+  merchant_id: deal.merchant_id,
+  deal_quality_score: deal.deal_quality_score,
+  price_trend_status: deal.price_trend_status,
+  price_position_percent: deal.price_position_percent
+});
+
 export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProps> = ({ className }) => {
   const { bestDeals, categoryInsights, loading, searchIntelligentDeals } = usePriceIntelligence()
   const { 
@@ -36,8 +62,14 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
   } = useProducts()
   const { fetchPriceHistory, loading: historyLoading } = usePriceHistory()
   const { filters, isFilterActive } = useGlobalFilters()
+  
+  // Transform bestDeals to Product format for filtering
+  const transformedDeals = React.useMemo(() => 
+    bestDeals.map(transformBestDealToProduct), [bestDeals]
+  );
+  
   const { filteredProducts, filterStats, hasActiveFilters } = useFilteredProducts(products)
-  const { filteredProducts: filteredDeals } = useFilteredProducts(bestDeals)
+  const { filteredProducts: filteredDeals } = useFilteredProducts(transformedDeals)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [priceHistory, setPriceHistory] = useState<any>(null)
   const [showPriceHistory, setShowPriceHistory] = useState(false)
@@ -80,7 +112,7 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
 
   // Calculate dashboard stats using filtered data
   const dashboardStats = React.useMemo(() => {
-    const dealsToAnalyze = filteredDeals.length > 0 ? filteredDeals : bestDeals
+    const dealsToAnalyze = filteredDeals.length > 0 ? filteredDeals : transformedDeals
     const totalDeals = dealsToAnalyze.length
     const excellentDeals = dealsToAnalyze.filter(deal => (deal.deal_quality_score || 0) >= 80).length
     const greatPriceDeals = dealsToAnalyze.filter(deal => deal.price_trend_status === 'great_price').length
@@ -94,7 +126,7 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
       greatPriceDeals,
       avgDiscount: avgDiscount.toFixed(1)
     }
-  }, [bestDeals, filteredDeals])
+  }, [transformedDeals, filteredDeals])
 
   // Get price trend indicator component
   const PriceTrendIndicator: React.FC<{ status?: string }> = ({ status }) => {
@@ -349,7 +381,7 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
           <div className={`${filters.viewMode === 'grid' 
             ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' 
             : 'space-y-4'}`}>
-            {(hasActiveFilters ? filteredDeals : bestDeals).slice(0, 20).map(deal => (
+            {(hasActiveFilters ? filteredDeals : transformedDeals).slice(0, 20).map(deal => (
               <Card key={`${deal.sku}-${deal.merchant_id}`} className="overflow-hidden">
                 <div className="aspect-square relative">
                   <img

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 
@@ -8,10 +9,11 @@ interface DashboardStats {
   loading: boolean;
   error: string | null;
   lastUpdated: string | null;
+  refreshStats: () => Promise<void>;
 }
 
 export function useDashboardStats(): DashboardStats {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState<Omit<DashboardStats, 'refreshStats'>>({
     activeDeals: 0,
     averageDiscount: 0,
     totalProducts: 0,

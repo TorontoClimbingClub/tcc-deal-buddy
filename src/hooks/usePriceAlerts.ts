@@ -1,5 +1,5 @@
+
 import { useState, useEffect } from 'react'
-import { supabase } from '@/integrations/supabase/client'
 import { useToast } from './use-toast'
 
 export interface PriceAlert {
@@ -36,51 +36,17 @@ export interface PriceAlertWithProduct extends PriceAlert {
 
 export const usePriceAlerts = () => {
   const [alerts, setAlerts] = useState<PriceAlertWithProduct[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  // Fetch user's price alerts with product information
+  // Mock implementation until price_alerts table is created
   const fetchAlerts = async () => {
     try {
       setLoading(true)
       setError(null)
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setAlerts([])
-        return
-      }
-
-      // Get alerts with product information
-      const { data: alertsData, error: alertsError } = await supabase
-        .from('price_alerts')
-        .select(`
-          *,
-          products!inner(
-            name,
-            merchant_name,
-            sale_price,
-            image_url
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (alertsError) {
-        throw alertsError
-      }
-
-      // Transform the data to flatten product information
-      const transformedAlerts: PriceAlertWithProduct[] = (alertsData || []).map(alert => ({
-        ...alert,
-        product_name: alert.products?.name,
-        merchant_name: alert.products?.merchant_name,
-        current_price: alert.products?.sale_price,
-        image_url: alert.products?.image_url
-      }))
-
-      setAlerts(transformedAlerts)
+      // For now, return empty array since price_alerts table doesn't exist
+      setAlerts([])
     } catch (err) {
       console.error('Error fetching price alerts:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch price alerts')
@@ -89,33 +55,16 @@ export const usePriceAlerts = () => {
     }
   }
 
-  // Create a new price alert
+  // Create a new price alert (mock implementation)
   const createAlert = async (alertData: CreatePriceAlertData): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        throw new Error('User not authenticated')
-      }
-
-      const { error } = await supabase
-        .from('price_alerts')
-        .insert({
-          ...alertData,
-          user_id: user.id,
-          notification_methods: alertData.notification_methods || ['email']
-        })
-
-      if (error) {
-        throw error
-      }
-
+      console.log('Would create price alert:', alertData)
+      
       toast({
-        title: "Price Alert Created",
-        description: "You'll be notified when your price conditions are met.",
+        title: "Feature Coming Soon",
+        description: "Price alerts will be available once the database setup is complete.",
       })
 
-      // Refresh alerts list
-      await fetchAlerts()
       return true
     } catch (err) {
       console.error('Error creating price alert:', err)
@@ -131,28 +80,19 @@ export const usePriceAlerts = () => {
     }
   }
 
-  // Update an existing price alert
+  // Update an existing price alert (mock implementation)
   const updateAlert = async (
     alertId: string, 
     updates: Partial<Pick<PriceAlert, 'target_price' | 'target_discount_percent' | 'is_active' | 'notification_methods'>>
   ): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('price_alerts')
-        .update(updates)
-        .eq('id', alertId)
-
-      if (error) {
-        throw error
-      }
-
+      console.log('Would update price alert:', alertId, updates)
+      
       toast({
-        title: "Alert Updated",
-        description: "Your price alert has been updated.",
+        title: "Feature Coming Soon",
+        description: "Price alert updates will be available once the database setup is complete.",
       })
 
-      // Refresh alerts list
-      await fetchAlerts()
       return true
     } catch (err) {
       console.error('Error updating price alert:', err)
@@ -168,25 +108,16 @@ export const usePriceAlerts = () => {
     }
   }
 
-  // Delete a price alert
+  // Delete a price alert (mock implementation)
   const deleteAlert = async (alertId: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('price_alerts')
-        .delete()
-        .eq('id', alertId)
-
-      if (error) {
-        throw error
-      }
-
+      console.log('Would delete price alert:', alertId)
+      
       toast({
-        title: "Alert Deleted",
-        description: "Your price alert has been removed.",
+        title: "Feature Coming Soon",
+        description: "Price alert deletion will be available once the database setup is complete.",
       })
 
-      // Refresh alerts list
-      await fetchAlerts()
       return true
     } catch (err) {
       console.error('Error deleting price alert:', err)
@@ -239,9 +170,6 @@ export const usePriceAlerts = () => {
 
     if (alertType === 'target_price' && value) {
       alertData.target_price = value
-    } else if (alertType === 'price_drop') {
-      // For price drop alerts, we don't need a specific value
-      // The system will trigger on any price decrease
     }
 
     return createAlert(alertData)
@@ -250,42 +178,6 @@ export const usePriceAlerts = () => {
   // Load alerts when hook is first used
   useEffect(() => {
     fetchAlerts()
-  }, [])
-
-  // Set up real-time subscription for alerts
-  useEffect(() => {
-    const setupSubscription = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        
-        if (!user) return
-
-        const subscription = supabase
-          .channel('price_alerts_changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'price_alerts',
-              filter: `user_id=eq.${user.id}`
-            },
-            () => {
-              // Refresh alerts when changes occur
-              fetchAlerts()
-            }
-          )
-          .subscribe()
-
-        return () => {
-          subscription.unsubscribe()
-        }
-      } catch (error) {
-        console.error('Error setting up price alerts subscription:', error)
-      }
-    }
-
-    setupSubscription()
   }, [])
 
   return {

@@ -10,7 +10,7 @@ import { TrendingUp, TrendingDown, Target, DollarSign, ShoppingCart, Star, Clock
 import { usePriceIntelligence } from '@/hooks/usePriceIntelligence'
 import { useProducts } from '@/hooks/useProducts'
 import { usePriceHistory } from '@/hooks/usePriceHistory'
-import { ProductCard } from './ProductCard'
+import ProductCard from './ProductCard'
 import { PriceHistoryChart } from './PriceHistoryChart'
 
 interface PriceIntelligenceDashboardProps {
@@ -58,7 +58,7 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
     }
 
     const results = await searchIntelligentDeals(filters)
-    setFilteredDeals(results)
+    setFilteredDeals(results || [])
   }
 
   React.useEffect(() => {
@@ -294,62 +294,12 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
               </div>
             ) : (
               products.map((product) => (
-                <Card 
-                  key={product.id} 
-                  className="hover:shadow-lg transition-shadow cursor-pointer border-gray-200"
-                  onClick={() => handleProductSelect(product)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-medium text-sm line-clamp-2 flex-1">{product.name}</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="ml-2"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleProductSelect(product)
-                        }}
-                      >
-                        <History className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    {product.imageUrl && (
-                      <img 
-                        src={product.imageUrl} 
-                        alt={product.name}
-                        className="w-full h-32 object-cover rounded mb-3"
-                      />
-                    )}
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-lg font-bold">${product.price}</p>
-                        {product.originalPrice && product.originalPrice > product.price && (
-                          <p className="text-sm text-gray-500 line-through">
-                            ${product.originalPrice}
-                          </p>
-                        )}
-                      </div>
-                      {product.discount && (
-                        <Badge variant="secondary" className="bg-green-50 text-green-700">
-                          -{product.discount}%
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
-                      <span>{product.merchant}</span>
-                      {product.category && (
-                        <>
-                          <span>•</span>
-                          <span>{product.category}</span>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onViewDetails={handleProductSelect}
+                  showPriceIntelligence={true}
+                />
               ))
             )}
           </div>

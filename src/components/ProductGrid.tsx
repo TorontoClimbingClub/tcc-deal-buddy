@@ -8,7 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, RefreshCw, AlertCircle, Filter, Search, TrendingUp, ShoppingBag, Star, DollarSign } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 
-const ProductGrid: React.FC = () => {
+interface ProductGridProps {
+  showPriceIntelligence?: boolean;
+}
+
+const ProductGrid: React.FC<ProductGridProps> = ({ showPriceIntelligence = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedBrand, setSelectedBrand] = useState('all');
@@ -311,6 +315,7 @@ const ProductGrid: React.FC = () => {
                       key={product.id}
                       product={product}
                       onViewDetails={handleViewDetails}
+                      showPriceIntelligence={showPriceIntelligence}
                     />
                   ))}
                 </div>

@@ -8,7 +8,12 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ui:before": "node screenshot-fast.cjs before",
+    "ui:after": "node screenshot-fast.cjs after",
+    "ui:compare": "node screenshot-fast.cjs compare",
+    "ui:update-map": "node /mnt/ssd/Projects/claude/tools/ui-editor/map-generator.cjs .",
+    "ui:reset": "node /mnt/ssd/Projects/claude/tools/ui-editor/screenshot-workflow.cjs . reset"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

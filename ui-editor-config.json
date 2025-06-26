@@ -1,0 +1,8 @@
+{
+  "url": "http://192.168.50.32:8080",
+  "projectName": "tcc-deal-buddy",
+  "elements": [
+    {"name": "header", "selector": ".container > .mb-8"},
+    {"name": "main-content", "selector": ".container"}
+  ]
+}

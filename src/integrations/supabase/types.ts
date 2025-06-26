@@ -74,6 +74,7 @@ export type Database = {
       }
       products: {
         Row: {
+          availability_score: number | null
           brand_name: string | null
           buy_url: string | null
           category: string | null
@@ -91,9 +92,11 @@ export type Database = {
           sale_price: number | null
           sku: string
           subcategory: string | null
+          sync_priority: number | null
           updated_at: string | null
         }
         Insert: {
+          availability_score?: number | null
           brand_name?: string | null
           buy_url?: string | null
           category?: string | null
@@ -111,9 +114,11 @@ export type Database = {
           sale_price?: number | null
           sku: string
           subcategory?: string | null
+          sync_priority?: number | null
           updated_at?: string | null
         }
         Update: {
+          availability_score?: number | null
           brand_name?: string | null
           buy_url?: string | null
           category?: string | null
@@ -131,6 +136,7 @@ export type Database = {
           sale_price?: number | null
           sku?: string
           subcategory?: string | null
+          sync_priority?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -138,36 +144,108 @@ export type Database = {
       sync_jobs: {
         Row: {
           api_calls_used: number | null
+          avg_processing_time_ms: number | null
+          categories_synced: string[] | null
           completed_at: string | null
+          created_at: string | null
           error_message: string | null
           id: string
+          job_subtype: string | null
           job_type: string
+          merchant_ids: number[] | null
+          price_history_entries: number | null
+          products_added: number | null
+          products_updated: number | null
           records_processed: number | null
           started_at: string | null
           status: string
           sync_date: string
+          updated_at: string | null
         }
         Insert: {
           api_calls_used?: number | null
+          avg_processing_time_ms?: number | null
+          categories_synced?: string[] | null
           completed_at?: string | null
+          created_at?: string | null
           error_message?: string | null
           id?: string
+          job_subtype?: string | null
           job_type: string
+          merchant_ids?: number[] | null
+          price_history_entries?: number | null
+          products_added?: number | null
+          products_updated?: number | null
           records_processed?: number | null
           started_at?: string | null
           status?: string
           sync_date?: string
+          updated_at?: string | null
         }
         Update: {
           api_calls_used?: number | null
+          avg_processing_time_ms?: number | null
+          categories_synced?: string[] | null
           completed_at?: string | null
+          created_at?: string | null
           error_message?: string | null
           id?: string
+          job_subtype?: string | null
           job_type?: string
+          merchant_ids?: number[] | null
+          price_history_entries?: number | null
+          products_added?: number | null
+          products_updated?: number | null
           records_processed?: number | null
           started_at?: string | null
           status?: string
           sync_date?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sync_queue: {
+        Row: {
+          api_calls_used: number | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          merchant_id: number
+          priority: number | null
+          processed_at: string | null
+          product_sku: string
+          requested_by_user_id: string | null
+          scheduled_for: string | null
+          status: string | null
+          sync_type: string
+        }
+        Insert: {
+          api_calls_used?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          merchant_id: number
+          priority?: number | null
+          processed_at?: string | null
+          product_sku: string
+          requested_by_user_id?: string | null
+          scheduled_for?: string | null
+          status?: string | null
+          sync_type: string
+        }
+        Update: {
+          api_calls_used?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          merchant_id?: number
+          priority?: number | null
+          processed_at?: string | null
+          product_sku?: string
+          requested_by_user_id?: string | null
+          scheduled_for?: string | null
+          status?: string | null
+          sync_type?: string
         }
         Relationships: []
       }

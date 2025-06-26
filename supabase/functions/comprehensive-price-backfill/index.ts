@@ -8,10 +8,12 @@ const corsHeaders = {
 }
 
 interface BackfillRequest {
-  mode?: 'full_catalog' | 'test_batch'
+  mode?: 'full_catalog' | 'test_batch' | 'test' | 'test_single'
   batch_size?: number
   max_products?: number
   specific_skus?: string[]
+  test_skus?: string[]
+  test_sku?: string
 }
 
 serve(async (req) => {
@@ -37,26 +39,46 @@ serve(async (req) => {
       throw new Error('Missing AvantLink API credentials')
     }
 
+    console.log(`✅ API credentials loaded: affiliate_id=${affiliateId}`)
+
     const requestBody = await req.json() as BackfillRequest
     const { 
-      mode = 'full_catalog', 
+      mode = 'test', 
       batch_size = 5, 
-      max_products = 2184,
-      specific_skus = []
+      max_products = 10,
+      specific_skus = [],
+      test_skus = [],
+      test_sku = ''
     } = requestBody
 
     console.log(`📊 Backfill configuration:`, { mode, batch_size, max_products })
 
-    // Fetch all products from database
+    // Test database connection first
+    console.log('🔗 Testing database connection...')
+    const { data: testData, error: testError } = await supabaseClient
+      .from('price_history')
+      .select('count')
+      .limit(1)
+    
+    if (testError) {
+      console.error('❌ Database connection failed:', testError)
+      throw new Error(`Database connection failed: ${testError.message}`)
+    }
+    
+    console.log('✅ Database connection successful')
+
+    // Determine which products to process
     let query = supabaseClient
       .from('products')
       .select('sku, merchant_id, name, merchant_name')
       .order('merchant_id', { ascending: true })
 
-    if (specific_skus.length > 0) {
+    if (mode === 'test_single' && test_sku) {
+      query = query.eq('sku', test_sku)
+    } else if (test_skus.length > 0) {
+      query = query.in('sku', test_skus)
+    } else if (specific_skus.length > 0) {
       query = query.in('sku', specific_skus)
-    } else if (mode === 'test_batch') {
-      query = query.limit(10)
     } else {
       query = query.limit(max_products)
     }
@@ -99,16 +121,18 @@ serve(async (req) => {
             affiliate_id: affiliateId,
             merchant_id: product.merchant_id.toString(),
             sku: product.sku,
-            show_pricing_history: 'true',
-            show_retail_price: 'true',
+            show_pricing_history: '1',
+            show_retail_price: '1',
             output: 'xml'
           }).toString()
+
+          console.log(`🌐 API URL: ${apiUrl}`)
 
           const response = await fetch(apiUrl)
           totalApiCalls++
 
           if (!response.ok) {
-            console.error(`❌ API call failed for ${product.sku}: ${response.status}`)
+            console.error(`❌ API call failed for ${product.sku}: ${response.status} ${response.statusText}`)
             errors.push({ sku: product.sku, error: `API call failed: ${response.status}` })
             continue
           }
@@ -116,18 +140,28 @@ serve(async (req) => {
           const xmlText = await response.text()
           console.log(`📄 Received XML response for ${product.sku} (${xmlText.length} chars)`)
 
+          // Log first 200 characters for debugging
+          if (xmlText.length > 200) {
+            console.log(`📄 XML preview: ${xmlText.substring(0, 200)}...`)
+          } else {
+            console.log(`📄 Full XML: ${xmlText}`)
+          }
+
           // Parse XML price history
           const priceHistory = parseXMLPriceHistory(xmlText)
           console.log(`📈 Parsed ${priceHistory.length} price history entries for ${product.sku}`)
 
           if (priceHistory.length === 0) {
             console.log(`⚠️ No price history found for ${product.sku}`)
+            totalSuccessful++ // Count as processed even if no data
             continue
           }
 
-          // Insert price history records with upsert logic
+          // Insert price history records - FIXED: removed non-existent data_source column
           for (const record of priceHistory) {
             try {
+              console.log(`💾 Inserting price record: ${product.sku} - $${record.price} on ${record.date}`)
+              
               const { error: insertError } = await supabaseClient
                 .from('price_history')
                 .upsert({
@@ -136,8 +170,7 @@ serve(async (req) => {
                   price: record.price,
                   is_sale: record.is_sale,
                   discount_percent: record.discount_percent,
-                  recorded_date: record.date,
-                  data_source: 'avantlink_backfill'
+                  recorded_date: record.date
                 }, {
                   onConflict: 'product_sku,merchant_id,recorded_date'
                 })
@@ -147,6 +180,7 @@ serve(async (req) => {
                 errors.push({ sku: product.sku, error: insertError.message })
               } else {
                 totalPriceRecords++
+                console.log(`✅ Successfully inserted price record for ${product.sku}`)
               }
             } catch (insertException) {
               console.error(`💥 Exception inserting price history for ${product.sku}:`, insertException)
@@ -184,6 +218,13 @@ serve(async (req) => {
     console.log(`   - API calls made: ${totalApiCalls}`)
     console.log(`   - Price records created: ${totalPriceRecords}`)
 
+    // Verify data was inserted
+    const { count: finalCount } = await supabaseClient
+      .from('price_history')
+      .select('*', { count: 'exact', head: true })
+    
+    console.log(`📊 Final database count: ${finalCount} price history records`)
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -192,7 +233,8 @@ serve(async (req) => {
           successful: totalSuccessful,
           errors: errors.length,
           api_calls_used: totalApiCalls,
-          price_records_created: totalPriceRecords
+          price_records_created: totalPriceRecords,
+          final_database_count: finalCount
         },
         errors: errors.slice(0, 10) // Limit error details to prevent huge responses
       }, null, 2),
@@ -220,12 +262,18 @@ serve(async (req) => {
 })
 
 /**
- * Parse XML price history from AvantLink API response
+ * Parse XML price history from AvantLink API response - IMPROVED VERSION
  */
 function parseXMLPriceHistory(xmlText: string): any[] {
   const priceHistory: any[] = []
   
   try {
+    // Handle different types of responses
+    if (xmlText.includes('No pricing history found') || xmlText.includes('Error:') || xmlText.length < 200) {
+      console.log('⚠️ XML indicates no pricing history or error response')
+      return []
+    }
+
     // Extract Table1 entries using regex
     const table1Regex = /<Table1>(.*?)<\/Table1>/gs
     let match
@@ -240,11 +288,26 @@ function parseXMLPriceHistory(xmlText: string): any[] {
       
       if (dateMatch && retailPriceMatch && salePriceMatch) {
         const dateStr = dateMatch[1].trim()
-        const retailPrice = parseFloat(retailPriceMatch[1].trim())
-        const salePrice = parseFloat(salePriceMatch[1].trim())
+        const retailPriceStr = retailPriceMatch[1].trim()
+        const salePriceStr = salePriceMatch[1].trim()
+        
+        // Validate numeric values
+        const retailPrice = parseFloat(retailPriceStr)
+        const salePrice = parseFloat(salePriceStr)
+        
+        if (isNaN(retailPrice) || isNaN(salePrice) || retailPrice <= 0 || salePrice <= 0) {
+          console.log(`⚠️ Skipping invalid price data: retail=${retailPriceStr}, sale=${salePriceStr}`)
+          continue
+        }
         
         // Parse date (format: "2025-01-22 11:15:06" -> "2025-01-22")
         const recordedDate = dateStr.split(' ')[0]
+        
+        // Validate date format
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(recordedDate)) {
+          console.log(`⚠️ Skipping invalid date format: ${dateStr}`)
+          continue
+        }
         
         // Determine if it's a sale and calculate discount
         const isSale = salePrice < retailPrice
@@ -261,6 +324,8 @@ function parseXMLPriceHistory(xmlText: string): any[] {
     
     // Sort by date (oldest first)
     priceHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    
+    console.log(`📈 Successfully parsed ${priceHistory.length} valid price entries`)
     
   } catch (error) {
     console.error('❌ Error parsing XML:', error)

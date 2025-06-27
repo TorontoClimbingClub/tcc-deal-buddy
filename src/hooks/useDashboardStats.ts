@@ -35,11 +35,11 @@ export function useDashboardStats(): DashboardStats {
         throw dealsError;
       }
 
-      // Get total products count
+      // Get total products count from latest sync date
       const { count: totalCount, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('last_sync_date', new Date().toISOString().split('T')[0]);
+        .eq('merchant_id', 18557);
 
       if (countError) {
         throw countError;

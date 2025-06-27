@@ -234,9 +234,21 @@ serve(async (req) => {
 
           // Insert price history entries
           if (historyEntries.length > 0) {
+            const uniqueEntries = new Map()
+            historyEntries.forEach(entry => {
+              const key = `${entry.product_sku}-${entry.merchant_id}-${entry.recorded_date}`
+              if (!uniqueEntries.has(key) || entry.price < uniqueEntries.get(key).price) {
+                uniqueEntries.set(key, entry)
+              }
+            })
+            const deduplicatedEntries = Array.from(uniqueEntries.values())
+
+            console.log(`📊 Deduplicated ${historyEntries.length} entries to ${deduplicatedEntries.length} unique entries for ${product.sku}`)
+
+            // Insert deduplicated price history entries
             const { error: historyError } = await supabaseClient
               .from('price_history')
-              .upsert(historyEntries, {
+              .upsert(deduplicatedEntries, {
                 onConflict: 'product_sku,merchant_id,recorded_date'
               })
 
@@ -245,18 +257,26 @@ serve(async (req) => {
               throw historyError
             }
 
-            totalHistoryEntries += historyEntries.length
-            console.log(`✅ Added ${historyEntries.length} price history entries for ${product.sku}`)
+            totalHistoryEntries += deduplicatedEntries.length
+            console.log(`✅ Added ${deduplicatedEntries.length} price history entries for ${product.sku}`)
           }
 
           // Mark as completed in tracking table
           if (resume) {
+            // Get current api_call_count
+            const { data: currentTracking } = await supabaseClient
+              .from('sku_api_tracking')
+              .select('api_call_count')
+              .eq('sku', product.sku)
+              .eq('merchant_id', product.merchant_id)
+              .single()
+
             await supabaseClient
               .from('sku_api_tracking')
               .update({
                 status: 'completed',
                 last_successful_call: new Date().toISOString(),
-                api_call_count: supabaseClient.from('sku_api_tracking').select('api_call_count').eq('sku', product.sku).eq('merchant_id', product.merchant_id).single().then(r => (r.data?.api_call_count || 0) + 1),
+                api_call_count: (currentTracking?.api_call_count || 0) + 1,
                 updated_at: new Date().toISOString()
               })
               .eq('sku', product.sku)
@@ -270,12 +290,20 @@ serve(async (req) => {
           
           // Mark as no_data in tracking table
           if (resume) {
+            // Get current api_call_count
+            const { data: currentTracking } = await supabaseClient
+              .from('sku_api_tracking')
+              .select('api_call_count')
+              .eq('sku', product.sku)
+              .eq('merchant_id', product.merchant_id)
+              .single()
+
             await supabaseClient
               .from('sku_api_tracking')
               .update({
                 status: 'no_data',
                 last_successful_call: new Date().toISOString(),
-                api_call_count: supabaseClient.from('sku_api_tracking').select('api_call_count').eq('sku', product.sku).eq('merchant_id', product.merchant_id).single().then(r => (r.data?.api_call_count || 0) + 1),
+                api_call_count: (currentTracking?.api_call_count || 0) + 1,
                 updated_at: new Date().toISOString()
               })
               .eq('sku', product.sku)
@@ -293,12 +321,20 @@ serve(async (req) => {
         
         // Mark as failed in tracking table
         if (resume) {
+          // Get current api_call_count
+          const { data: currentTracking } = await supabaseClient
+            .from('sku_api_tracking')
+            .select('api_call_count')
+            .eq('sku', product.sku)
+            .eq('merchant_id', product.merchant_id)
+            .single()
+
           await supabaseClient
             .from('sku_api_tracking')
             .update({
               status: 'failed',
               error_message: error.message,
-              api_call_count: supabaseClient.from('sku_api_tracking').select('api_call_count').eq('sku', product.sku).eq('merchant_id', product.merchant_id).single().then(r => (r.data?.api_call_count || 0) + 1),
+              api_call_count: (currentTracking?.api_call_count || 0) + 1,
               updated_at: new Date().toISOString()
             })
             .eq('sku', product.sku)

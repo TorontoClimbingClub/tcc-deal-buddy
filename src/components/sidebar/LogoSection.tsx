@@ -23,8 +23,8 @@ export const LogoSection: React.FC = () => {
         </div>
         <motion.div
           animate={{
-            opacity: (open || isMobile || pinned) ? 1 : 0,
-            display: (open || isMobile || pinned) ? "block" : "none",
+            opacity: (open || pinned) ? 1 : 0,
+            display: (open || pinned) ? "block" : "none",
           }}
           className="whitespace-nowrap hidden md:block md:inline"
         >

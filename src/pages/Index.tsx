@@ -5,12 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Bell, Star, Grid, BarChart3, Calendar, Activity, DollarSign, Filter } from 'lucide-react';
 import ProductGrid from '../components/ProductGrid';
-import { PriceIntelligenceDashboard } from '../components/PriceIntelligenceDashboard';
-import AllProductsPage from '../components/AllProductsPage';
+import { AllProductsPage } from '../components/AllProductsPage';
 import { AppSidebar } from '../components/AppSidebar';
 import { usePriceAlerts } from '../hooks/usePriceAlerts';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import { useRecentActivity } from '../hooks/useRecentActivity';
+import { useNewSales } from '../hooks/useNewSales';
 import { FilterProvider, useGlobalFilters } from '../contexts/FilterContext';
 
 const DashboardContent = () => {
@@ -39,7 +38,7 @@ const DashboardContent = () => {
   const alertStats = getAlertStats();
   const dashboardStats = useDashboardStats();
   
-  const { activities, loading: activitiesLoading, error: activitiesError } = useRecentActivity();
+  const { activities, loading: activitiesLoading, error: activitiesError } = useNewSales();
   const { filters, getActiveFilterCount, isFilterActive } = useGlobalFilters();
 
   const renderDashboardView = () => (
@@ -67,75 +66,75 @@ const DashboardContent = () => {
       </div>
 
       {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">
+          <CardContent className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-center md:text-left">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">
                   Active Deals
                 </p>
-                <p className="text-3xl font-bold text-blue-600">
+                <p className="text-lg md:text-3xl font-bold text-blue-600">
                   {dashboardStats.loading ? '...' : dashboardStats.activeDeals.toLocaleString()}
                 </p>
               </div>
-              <Grid className="h-8 w-8 text-blue-500" />
+              <Grid className="h-4 w-4 md:h-8 md:w-8 text-blue-500 mx-auto md:mx-0 mt-1 md:mt-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Avg. Discount</p>
-                <p className="text-3xl font-bold text-green-600">
+          <CardContent className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-center md:text-left">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">Avg. Discount</p>
+                <p className="text-lg md:text-3xl font-bold text-green-600">
                   {dashboardStats.loading ? '...' : `${dashboardStats.averageDiscount}%`}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-500" />
+              <DollarSign className="h-4 w-4 md:h-8 md:w-8 text-green-500 mx-auto md:mx-0 mt-1 md:mt-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Price Alerts</p>
-                <p className="text-3xl font-bold text-purple-600">{alertStats.activeAlerts}</p>
+          <CardContent className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-center md:text-left">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">Price Alerts</p>
+                <p className="text-lg md:text-3xl font-bold text-purple-600">{alertStats.activeAlerts}</p>
               </div>
-              <Bell className="h-8 w-8 text-purple-500" />
+              <Bell className="h-4 w-4 md:h-8 md:w-8 text-purple-500 mx-auto md:mx-0 mt-1 md:mt-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">
+          <CardContent className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-center md:text-left">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">
                   Total Products
                 </p>
-                <p className="text-3xl font-bold text-orange-600">
+                <p className="text-lg md:text-3xl font-bold text-orange-600">
                   {dashboardStats.loading ? '...' : dashboardStats.totalProducts.toLocaleString()}
                 </p>
               </div>
-              <Activity className="h-8 w-8 text-orange-500" />
+              <Activity className="h-4 w-4 md:h-8 md:w-8 text-orange-500 mx-auto md:mx-0 mt-1 md:mt-0" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity & Trending */}
+      {/* New Sales & Trending */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Recent Activity
+              New Sales
             </CardTitle>
-            <CardDescription>Latest deals and price changes</CardDescription>
+            <CardDescription>Latest sales and price drops</CardDescription>
           </CardHeader>
           <CardContent>
             {activitiesLoading ? (
@@ -152,14 +151,14 @@ const DashboardContent = () => {
               </div>
             ) : activitiesError ? (
               <div className="text-center py-8">
-                <p className="text-gray-500 mb-2">Failed to load recent activity</p>
+                <p className="text-gray-500 mb-2">Failed to load new sales</p>
                 <p className="text-xs text-gray-400">{activitiesError}</p>
               </div>
             ) : activities.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">No recent activity</p>
-                <p className="text-xs text-gray-400">New deals and price changes will appear here</p>
+                <p className="text-gray-500">No new sales</p>
+                <p className="text-xs text-gray-400">New sales and price drops will appear here</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -230,8 +229,6 @@ const DashboardContent = () => {
         return <ProductGrid />;
       case 'all-products':
         return <AllProductsPage />;
-      case 'intelligence':
-        return <PriceIntelligenceDashboard />;
       case 'alerts':
         return (
           <Card>

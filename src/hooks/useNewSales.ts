@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 
-export interface RecentActivity {
+export interface NewSales {
   id: string;
   item: string;
   change: string;
@@ -10,15 +10,15 @@ export interface RecentActivity {
   timestamp: Date;
 }
 
-interface UseRecentActivityResult {
-  activities: RecentActivity[];
+interface UseNewSalesResult {
+  activities: NewSales[];
   loading: boolean;
   error: string | null;
   refreshActivities: () => Promise<void>;
 }
 
-export function useRecentActivity(): UseRecentActivityResult {
-  const [activities, setActivities] = useState<RecentActivity[]>([]);
+export function useNewSales(): UseNewSalesResult {
+  const [activities, setActivities] = useState<NewSales[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,12 +34,12 @@ export function useRecentActivity(): UseRecentActivityResult {
     return date.toLocaleDateString();
   };
 
-  const fetchRecentActivity = useCallback(async () => {
+  const fetchNewSales = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const allActivities: RecentActivity[] = [];
+      const allActivities: NewSales[] = [];
 
       // 1. Find products with actual price drops in the last 7 days
       // Get price history data ordered by product and date to analyze price changes
@@ -57,7 +57,7 @@ export function useRecentActivity(): UseRecentActivityResult {
       const recentPriceDrops: any[] = [];
       const productPriceMap = new Map<string, any[]>();
       
-      console.log(`🔍 Recent Activity: Analyzing ${priceHistoryData?.length || 0} price history records`);
+      console.log(`🔍 New Sales: Analyzing ${priceHistoryData?.length || 0} price history records`);
       
       if (priceHistoryData && priceHistoryData.length > 0) {
         // Group price history by product
@@ -110,7 +110,7 @@ export function useRecentActivity(): UseRecentActivityResult {
         // Sort by most recent price drops first
         recentPriceDrops.sort((a, b) => new Date(b.price_drop_timestamp).getTime() - new Date(a.price_drop_timestamp).getTime());
         
-        console.log(`💰 Recent Activity: Found ${recentPriceDrops.length} actual price drops (5%+ drops)`);
+        console.log(`💰 New Sales: Found ${recentPriceDrops.length} actual price drops (5%+ drops)`);
         
         // Limit to top 20 most recent drops
         const priceDrops = recentPriceDrops.slice(0, 20);
@@ -144,7 +144,7 @@ export function useRecentActivity(): UseRecentActivityResult {
             }
           });
         } else {
-          console.log(`ℹ️ Recent Activity: No significant price drops found, falling back to recent sales`);
+          console.log(`ℹ️ New Sales: No significant price drops found, falling back to recent sales`);
           
           // Fallback: Show recent items that are currently on sale
           const { data: fallbackSales } = await supabase
@@ -217,7 +217,7 @@ export function useRecentActivity(): UseRecentActivityResult {
       setError(null);
 
     } catch (err: any) {
-      console.error('❌ Recent activity error:', err);
+      console.error('❌ New sales error:', err);
       setError(`Error: ${err.message}`);
       setActivities([]);
     } finally {
@@ -227,21 +227,21 @@ export function useRecentActivity(): UseRecentActivityResult {
 
   // Auto-fetch on mount
   useEffect(() => {
-    fetchRecentActivity();
-  }, [fetchRecentActivity]);
+    fetchNewSales();
+  }, [fetchNewSales]);
 
   // Refresh every 10 minutes
   useEffect(() => {
-    const interval = setInterval(fetchRecentActivity, 10 * 60 * 1000);
+    const interval = setInterval(fetchNewSales, 10 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [fetchRecentActivity]);
+  }, [fetchNewSales]);
 
   return {
     activities,
     loading,
     error,
-    refreshActivities: fetchRecentActivity
+    refreshActivities: fetchNewSales
   };
 }
 
-export default useRecentActivity;
+export default useNewSales;

@@ -14,6 +14,10 @@ interface SidebarContextProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   animate: boolean;
+  pinned: boolean;
+  setPinned: React.Dispatch<React.SetStateAction<boolean>>;
+  interacting: boolean;
+  setInteracting: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const SidebarContext = createContext<SidebarContextProps | undefined>(
@@ -54,12 +58,14 @@ export const SidebarProvider = ({
   animate?: boolean;
 }) => {
   const [openState, setOpenState] = useState(false);
+  const [pinnedState, setPinnedState] = useState(false);
+  const [interactingState, setInteractingState] = useState(false);
 
   const open = openProp !== undefined ? openProp : openState;
   const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, animate: animate }}>
+    <SidebarContext.Provider value={{ open, setOpen, animate: animate, pinned: pinnedState, setPinned: setPinnedState, interacting: interactingState, setInteracting: setInteractingState }}>
       {children}
     </SidebarContext.Provider>
   );
@@ -109,7 +115,37 @@ export const DesktopSidebar = ({
   children,
   ...props
 }: React.ComponentProps<typeof motion.div>) => {
-  const { open, setOpen, animate } = useSidebar();
+  const { open, setOpen, animate, pinned, interacting } = useSidebar();
+  const timeoutRef = React.useRef<NodeJS.Timeout>();
+  
+  const handleMouseEnter = () => {
+    // Clear any pending close timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    if (!pinned) {
+      setOpen(true);
+    }
+  };
+  
+  const handleMouseLeave = () => {
+    // Don't auto-close if sidebar is pinned
+    if (!pinned) {
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      // Set timeout to check conditions before closing
+      timeoutRef.current = setTimeout(() => {
+        // Check current state, not stale closure state
+        const sidebar = document.querySelector('[data-sidebar-interacting="true"]');
+        if (!sidebar && !pinned) {
+          setOpen(false);
+        }
+      }, 150);
+    }
+  };
+  
   return (
     <motion.div
       className={cn(
@@ -117,10 +153,11 @@ export const DesktopSidebar = ({
         className
       )}
       animate={{
-        width: animate ? (open ? "300px" : "60px") : "300px",
+        width: animate ? (open || pinned ? "300px" : "60px") : "300px",
       }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      data-sidebar-interacting={interacting}
       {...props}
     >
       {children}

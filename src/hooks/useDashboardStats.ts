@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
+import { applyDealFilters, DEAL_FILTERS, getDealDateFilter } from '../utils/dealFilters';
 
 interface DashboardStats {
   activeDeals: number;
@@ -26,29 +27,42 @@ export function useDashboardStats(): DashboardStats {
     setStats(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Get current deals count and average discount
-      const { data: dealsData, error: dealsError } = await supabase
+      // Get current deals count using same filters as All Deals page
+      const dealsCountQuery = supabase
         .from('current_deals')
-        .select('calculated_discount_percent');
+        .select('*', { count: 'exact', head: true });
+      const { count: activeDealsCount, error: dealsCountError } = await applyDealFilters(dealsCountQuery);
 
-      if (dealsError) {
-        throw dealsError;
+      if (dealsCountError) {
+        throw dealsCountError;
       }
 
-      // Get total products count from latest sync date
+      // Get discount data for average calculation (limit to reasonable sample)
+      const discountQuery = supabase
+        .from('current_deals')
+        .select('calculated_discount_percent')
+        .limit(1000); // Sample for performance
+      const { data: discountData, error: discountError } = await applyDealFilters(discountQuery);
+
+      if (discountError) {
+        throw discountError;
+      }
+
+      // Get total products count using same filters as All Products page
       const { count: totalCount, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('merchant_id', 18557);
+        .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID) // Only valid MEC merchant
+        .gte('last_sync_date', getDealDateFilter()); // Last 7 days
 
       if (countError) {
         throw countError;
       }
 
       // Calculate stats
-      const activeDeals = dealsData?.length || 0;
-      const averageDiscount = dealsData && dealsData.length > 0
-        ? Math.round(dealsData.reduce((sum, deal) => sum + (deal.calculated_discount_percent || 0), 0) / dealsData.length)
+      const activeDeals = activeDealsCount || 0;
+      const averageDiscount = discountData && discountData.length > 0
+        ? Math.round(discountData.reduce((sum, deal) => sum + (deal.calculated_discount_percent || 0), 0) / discountData.length)
         : 0;
       const totalProducts = totalCount || 0;
 
@@ -76,11 +90,11 @@ export function useDashboardStats(): DashboardStats {
     fetchDashboardStats();
   }, [fetchDashboardStats]);
 
-  // Refresh every 5 minutes
-  useEffect(() => {
-    const interval = setInterval(fetchDashboardStats, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [fetchDashboardStats]);
+  // Refresh every 5 minutes - DISABLED
+  // useEffect(() => {
+  //   const interval = setInterval(fetchDashboardStats, 5 * 60 * 1000);
+  //   return () => clearInterval(interval);
+  // }, [fetchDashboardStats]);
 
   return {
     ...stats,

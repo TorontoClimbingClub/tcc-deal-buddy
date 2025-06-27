@@ -412,10 +412,10 @@ export const usePriceIntelligence = () => {
     }
   }
 
-  // Initialize data loading
-  useEffect(() => {
-    loadAllData()
-  }, [])
+  // Initialize data loading - DISABLED to prevent resource exhaustion
+  // useEffect(() => {
+  //   loadAllData()
+  // }, [])
 
   return {
     // Data

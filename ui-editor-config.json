@@ -1,8 +1,15 @@
 {
-  "url": "http://192.168.50.32:8080",
+  "url": "http://192.168.231.238:8080",
   "projectName": "tcc-deal-buddy",
-  "elements": [
-    {"name": "header", "selector": ".container > .mb-8"},
-    {"name": "main-content", "selector": ".container"}
-  ]
+  "elements": [],
+  "timeout": 10000,
+  "waitAfterLoad": 1000,
+  "screenshotConfig": {
+    "fullPage": true,
+    "mobile": true,
+    "desktop": true
+  },
+  "autoMapUpdate": true,
+  "cleanupOldScreenshots": true,
+  "maxScreenshotsToKeep": 50
 }

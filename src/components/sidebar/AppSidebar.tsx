@@ -16,7 +16,7 @@ import { SavedFiltersSection } from './SavedFiltersSection';
 import { StatsSection } from './StatsSection';
 import { AppSidebarProps, MenuItem } from './types';
 
-export const AppSidebar: React.FC<AppSidebarProps> = ({ activeView, onViewChange }) => {
+export const AppSidebar: React.FC<AppSidebarProps> = React.memo(({ activeView, onViewChange }) => {
   const dashboardStats = useDashboardStats();
   const { products } = useProducts();
   const { categoriesWithCounts, brands, priceRange } = useProductOptions(products);
@@ -43,7 +43,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ activeView, onViewChange
   const menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, count: null },
     { id: 'deals', label: 'All Deals', icon: ShoppingCart, count: null },
-    { id: 'intelligence', label: 'All Products', icon: BarChart3, count: null },
+    { id: 'all-products', label: 'All Products', icon: BarChart3, count: null },
     { id: 'alerts', label: 'My Alerts', icon: Bell, count: null },
     { id: 'favorites', label: 'Favorites', icon: Star, count: null },
     { id: 'trending', label: 'Trending', icon: TrendingUp, count: null }
@@ -146,4 +146,4 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ activeView, onViewChange
       </SidebarBody>
     </AceternitySidebar>
   );
-};
+});

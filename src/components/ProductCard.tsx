@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Bell, TrendingDown, TrendingUp, Target, Star, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +45,7 @@ interface ProductCardProps {
   viewMode?: 'grid' | 'list';
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ 
+const ProductCard: React.FC<ProductCardProps> = React.memo(({ 
   product, 
   onViewDetails, 
   showPriceIntelligence = false,
@@ -53,7 +53,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
   const { getProductPriceRecommendations } = usePriceIntelligence();
-  const [recommendation, setRecommendation] = useState<any>(null);
+  const [recommendation, setRecommendation] = useState<unknown>(null);
 
   // Normalize product properties for compatibility
   const currentPrice = product.sale_price || product.price;
@@ -66,12 +66,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const isOnSale = originalPrice && currentPrice < originalPrice;
   const isFav = product.sku && product.merchant_id ? isFavorite(product.sku, product.merchant_id) : false;
 
-  const handleAffiliateClick = (e: React.MouseEvent) => {
+  const handleAffiliateClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     window.open(buyUrl, '_blank', 'noopener,noreferrer');
-  };
+  }, [buyUrl]);
 
-  const handleFavoriteToggle = async (e: React.MouseEvent) => {
+  const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!product.sku || !product.merchant_id) return;
 
@@ -80,14 +80,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
     } else {
       await addToFavorites(product.sku, product.merchant_id);
     }
-  };
+  }, [product.sku, product.merchant_id, isFav, addToFavorites, removeFromFavorites]);
 
-  const loadPriceRecommendation = async () => {
+  const loadPriceRecommendation = useCallback(async () => {
     if (product.sku && product.merchant_id && !recommendation) {
       const rec = await getProductPriceRecommendations(product.sku, product.merchant_id);
       setRecommendation(rec);
     }
-  };
+  }, [product.sku, product.merchant_id, recommendation, getProductPriceRecommendations]);
 
   // Price trend indicator component
   const PriceTrendIndicator = () => {
@@ -382,6 +382,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default ProductCard;

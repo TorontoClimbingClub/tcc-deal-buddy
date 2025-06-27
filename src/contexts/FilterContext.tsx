@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { generateFilterId, isFilterStateMeaningful, describeFilterState } from '../utils/filterHash';
 import { filterRegistryService } from '../services/filterRegistry';
 
@@ -172,41 +172,41 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
     }
   }, [filters]);
 
-  const setSearch = (search: string) => {
+  const setSearch = useCallback((search: string) => {
     dispatch({ type: 'SET_SEARCH', payload: search });
-  };
+  }, []);
 
-  const setCategories = (categories: string[]) => {
+  const setCategories = useCallback((categories: string[]) => {
     dispatch({ type: 'SET_CATEGORIES', payload: categories });
-  };
+  }, []);
 
-  const setBrands = (brands: string[]) => {
+  const setBrands = useCallback((brands: string[]) => {
     dispatch({ type: 'SET_BRANDS', payload: brands });
-  };
+  }, []);
 
-  const setPriceRange = (range: { min: number; max: number }) => {
+  const setPriceRange = useCallback((range: { min: number; max: number }) => {
     dispatch({ type: 'SET_PRICE_RANGE', payload: range });
-  };
+  }, []);
 
-  const setOnSale = (onSale: boolean) => {
+  const setOnSale = useCallback((onSale: boolean) => {
     dispatch({ type: 'SET_ON_SALE', payload: onSale });
-  };
+  }, []);
 
-  const setDiscountMin = (discount: number) => {
+  const setDiscountMin = useCallback((discount: number) => {
     dispatch({ type: 'SET_DISCOUNT_MIN', payload: discount });
-  };
+  }, []);
 
-  const setSortBy = (sortBy: GlobalFilterState['sortBy']) => {
+  const setSortBy = useCallback((sortBy: GlobalFilterState['sortBy']) => {
     dispatch({ type: 'SET_SORT_BY', payload: sortBy });
-  };
+  }, []);
 
-  const setViewMode = (viewMode: GlobalFilterState['viewMode']) => {
+  const setViewMode = useCallback((viewMode: GlobalFilterState['viewMode']) => {
     dispatch({ type: 'SET_VIEW_MODE', payload: viewMode });
-  };
+  }, []);
 
-  const applyFilter = (filter: SavedFilter) => {
+  const applyFilter = useCallback((filter: SavedFilter) => {
     dispatch({ type: 'APPLY_FILTER', payload: filter.filters });
-  };
+  }, []);
 
   const saveCurrentFilter = (name: string, productCount?: number) => {
     // Don't save empty/meaningless filters
@@ -249,13 +249,13 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
     setSavedFilters(prev => [...prev, newFilter]);
   };
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     dispatch({ type: 'CLEAR_FILTERS' });
-  };
+  }, []);
 
-  const removeFilter = (filterId: string) => {
+  const removeFilter = useCallback((filterId: string) => {
     setSavedFilters(prev => prev.filter(f => f.id !== filterId));
-  };
+  }, []);
 
   const importFilter = (filterId: string, filterState?: Partial<GlobalFilterState>) => {
     // If filterState not provided, try to get it from registry
@@ -302,7 +302,7 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
     return count;
   };
 
-  const value: FilterContextType = {
+  const value: FilterContextType = useMemo(() => ({
     filters,
     savedFilters,
     setSearch,
@@ -321,7 +321,23 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
     getActiveFilterCount,
     importFilter,
     updateFilterCount
-  };
+  }), [
+    filters,
+    savedFilters,
+    setSearch,
+    setCategories,
+    setBrands,
+    setPriceRange,
+    setOnSale,
+    setDiscountMin,
+    setSortBy,
+    setViewMode,
+    applyFilter,
+    clearFilters,
+    removeFilter,
+    isFilterActive,
+    getActiveFilterCount
+  ]);
 
   return (
     <FilterContext.Provider value={value}>

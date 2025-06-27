@@ -21,8 +21,18 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
   onSortByChange,
   onViewModeChange
 }) => {
-  const { open, isMobile } = useSidebar();
+  const { open, isMobile, setInteracting } = useSidebar();
   const [expanded, setExpanded] = useState(false);
+
+  const handleSelectOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      // Set interacting immediately when opening dropdown
+      setInteracting(true);
+    } else {
+      // Delay setting to false when closing to prevent race conditions
+      setTimeout(() => setInteracting(false), 100);
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -66,6 +76,7 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
               <Select
                 value={filters.categories[0] || 'all'}
                 onValueChange={onCategoryChange}
+                onOpenChange={handleSelectOpenChange}
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="All Categories" />
@@ -95,6 +106,7 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
               <Select
                 value={filters.brands[0] || 'all'}
                 onValueChange={onBrandChange}
+                onOpenChange={handleSelectOpenChange}
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="All Brands" />
@@ -144,6 +156,7 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
               <Select 
                 value={filters.sortBy} 
                 onValueChange={onSortByChange}
+                onOpenChange={handleSelectOpenChange}
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue />

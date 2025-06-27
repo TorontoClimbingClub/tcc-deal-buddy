@@ -1,48 +1,69 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Bell, Star, Grid, BarChart3, Calendar, Activity, DollarSign, Filter } from 'lucide-react';
 import ProductGrid from '../components/ProductGrid';
 import { PriceIntelligenceDashboard } from '../components/PriceIntelligenceDashboard';
+import AllProductsPage from '../components/AllProductsPage';
 import { AppSidebar } from '../components/AppSidebar';
 import { usePriceAlerts } from '../hooks/usePriceAlerts';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { useRecentActivity } from '../hooks/useRecentActivity';
 import { FilterProvider, useGlobalFilters } from '../contexts/FilterContext';
-import { useProducts } from '../hooks/useProducts';
-import { useFilteredProducts } from '../hooks/useFilteredProducts';
 
 const DashboardContent = () => {
   const [activeView, setActiveView] = useState('dashboard');
+  
+  // Handle hash changes for navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1); // Remove the #
+      if (hash) {
+        setActiveView(hash);
+      }
+    };
+    
+    // Check initial hash
+    const initialHash = window.location.hash.slice(1);
+    if (initialHash) {
+      setActiveView(initialHash);
+    }
+    
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
   const { getAlertStats } = usePriceAlerts();
   const alertStats = getAlertStats();
   const dashboardStats = useDashboardStats();
+  
   const { activities, loading: activitiesLoading, error: activitiesError } = useRecentActivity();
-  const { products } = useProducts();
   const { filters, getActiveFilterCount, isFilterActive } = useGlobalFilters();
-  const { filteredProducts, filterStats, hasActiveFilters } = useFilteredProducts(products);
 
   const renderDashboardView = () => (
     <div className="space-y-6">
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Welcome to TCC Deal Buddy 🚀
-        </h1>
-        <p className="text-gray-600 mb-4">
-          Your intelligent price tracking and deal discovery dashboard for outdoor gear
-          {hasActiveFilters && ' • Currently showing filtered results'}
-        </p>
-        {hasActiveFilters && (
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="bg-orange-50 text-orange-700">
-              <Filter className="h-3 w-3 mr-1" />
-              {getActiveFilterCount()} Filters Active
-            </Badge>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Welcome to TCC Deal Buddy 🚀
+            </h1>
+            <p className="text-gray-600 mb-4">
+              Your intelligent price tracking and deal discovery dashboard for outdoor gear
+            </p>
+            {getActiveFilterCount() > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="bg-orange-50 text-orange-700">
+                  <Filter className="h-3 w-3 mr-1" />
+                  {getActiveFilterCount()} Filters Active
+                </Badge>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Quick Stats Grid */}
@@ -52,13 +73,10 @@ const DashboardContent = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {hasActiveFilters ? 'Filtered Deals' : 'Active Deals'}
+                  Active Deals
                 </p>
                 <p className="text-3xl font-bold text-blue-600">
-                  {hasActiveFilters 
-                    ? filterStats.totalDeals.toLocaleString()
-                    : (dashboardStats.loading ? '...' : dashboardStats.activeDeals.toLocaleString())
-                  }
+                  {dashboardStats.loading ? '...' : dashboardStats.activeDeals.toLocaleString()}
                 </p>
               </div>
               <Grid className="h-8 w-8 text-blue-500" />
@@ -72,10 +90,7 @@ const DashboardContent = () => {
               <div>
                 <p className="text-sm text-gray-600">Avg. Discount</p>
                 <p className="text-3xl font-bold text-green-600">
-                  {hasActiveFilters 
-                    ? `${filterStats.avgDiscount}%`
-                    : (dashboardStats.loading ? '...' : `${dashboardStats.averageDiscount}%`)
-                  }
+                  {dashboardStats.loading ? '...' : `${dashboardStats.averageDiscount}%`}
                 </p>
               </div>
               <DollarSign className="h-8 w-8 text-green-500" />
@@ -100,7 +115,7 @@ const DashboardContent = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {hasActiveFilters ? 'Total Products' : 'Total Products'}
+                  Total Products
                 </p>
                 <p className="text-3xl font-bold text-orange-600">
                   {dashboardStats.loading ? '...' : dashboardStats.totalProducts.toLocaleString()}
@@ -213,6 +228,8 @@ const DashboardContent = () => {
         return renderDashboardView();
       case 'deals':
         return <ProductGrid />;
+      case 'all-products':
+        return <AllProductsPage />;
       case 'intelligence':
         return <PriceIntelligenceDashboard />;
       case 'alerts':

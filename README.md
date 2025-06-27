@@ -34,7 +34,81 @@ npm i
 
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
+
+# Step 5: Install UI editing dependencies for visual development workflow
+npm install playwright sharp
 ```
+
+## 🎨 UI Editing & Visual Development
+
+This project includes a comprehensive UI editing workflow with visual validation:
+
+### Quick Start
+```bash
+# Take before screenshot
+npm run ui:before
+
+# Make your UI changes
+# ... edit components ...
+
+# Take after screenshot & compare
+npm run ui:after
+npm run ui:compare
+```
+
+### Available Commands
+```bash
+npm run ui:before      # Capture current UI state (desktop + mobile)
+npm run ui:after       # Capture updated UI state + auto-update component map
+npm run ui:compare     # Visual comparison with pixel-perfect analysis
+npm run ui:reset       # Clean workflow, start fresh
+npm run ui:config      # Configure server URL settings
+npm run ui:update-map  # Update component mapping
+```
+
+### Dependencies for Full Features
+```bash
+# Required for screenshot capture
+npm install playwright
+
+# Required for pixel-perfect visual comparison
+npm install sharp
+```
+
+### WSL/Windows Setup
+**In WSL (recommended):**
+```bash
+# Install all dependencies
+npm install playwright sharp
+
+# Download browser binaries
+npx playwright install chromium
+```
+
+**In Windows PowerShell/CMD:**
+```bash
+# Install dependencies  
+npm install playwright sharp
+
+# Download browser binaries
+npx playwright install chromium
+```
+
+### Features
+- ✅ Smart server detection (auto-detects port 8081)
+- ✅ Desktop + mobile responsive testing
+- ✅ Pixel-perfect visual comparison
+- ✅ Auto component map updates
+- ✅ Screenshot cleanup & archiving
+- ✅ Visual diff overlays
+- ✅ Change percentage analysis
+
+### Troubleshooting
+If UI commands fail:
+1. Ensure dev server is running (`npm run dev`)
+2. Check server URL in `ui-editor-config.json`
+3. Update server address: `npm run ui:config`
+4. Install missing dependencies: `npm install playwright sharp`
 
 **Edit a file directly in GitHub**
 

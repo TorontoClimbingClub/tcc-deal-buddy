@@ -74,10 +74,12 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
   const [priceHistory, setPriceHistory] = useState<any>(null)
   const [showPriceHistory, setShowPriceHistory] = useState(false)
 
-  // Load all products on component mount for the "All Products" tab
-  React.useEffect(() => {
+  // Manual loading only - auto-loading disabled to prevent resource exhaustion
+  // Use button to manually load products
+  const handleLoadAllProducts = React.useCallback(() => {
+    console.log('PriceIntelligenceDashboard: Manual load all products')
     getAllProducts()
-  }, [])
+  }, [getAllProducts])
 
   // Handle product selection for price history
   const handleProductSelect = async (product: any) => {
@@ -91,14 +93,6 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
     }
   }
 
-  // Handle product search (uses global search from sidebar)
-  const handleSearch = async () => {
-    if (filters.search.trim()) {
-      await searchAllProducts(filters.search, 1) // Reset to page 1 for new search
-    } else {
-      await getAllProducts(1) // Reset to page 1 for new search
-    }
-  }
 
   // Handle page changes
   const handlePageChange = async (newPage: number) => {
@@ -223,7 +217,7 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
         </TabsList>
 
         <TabsContent value="all-products" className="space-y-4">
-          {/* Search Bar */}
+          {/* Header */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -242,21 +236,6 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search controlled by sidebar..."
-                    value={filters.search}
-                    disabled
-                    className="pl-10 bg-gray-50"
-                  />
-                </div>
-                <Button onClick={handleSearch} disabled={productsLoading}>
-                  {productsLoading ? 'Searching...' : 'Search API'}
-                </Button>
-              </div>
-              
               {/* Filter Indicator */}
               {hasActiveFilters && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -269,11 +248,26 @@ export const PriceIntelligenceDashboard: React.FC<PriceIntelligenceDashboardProp
                 </div>
               )}
               
+              {/* Load Products Button */}
+              {totalProducts === 0 && !productsLoading && (
+                <div className="mb-4 text-center">
+                  <Button 
+                    onClick={handleLoadAllProducts}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Load All Products ({products.length > 0 ? 'Reload' : 'Load'})
+                  </Button>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Click to load all 1,329 MEC products
+                  </p>
+                </div>
+              )}
+              
               {/* Pagination Controls */}
               {totalProducts > 0 && (
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalProducts)} of {totalProducts} API products
+                    Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalProducts)} of {totalProducts} products
                     {hasActiveFilters && ` • ${filteredProducts.length} match filters`}
                   </div>
                   <div className="flex items-center gap-2">

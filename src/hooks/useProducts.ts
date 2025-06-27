@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Product } from '../components/ProductCard';
+import { applyDealFilters, DEAL_FILTERS, getDealDateFilter } from '../utils/dealFilters';
 
 interface UseProductsResult {
   products: Product[];
@@ -51,6 +52,9 @@ export function useProducts(): UseProductsResult {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSizeState] = useState(50);
   const [totalPages, setTotalPages] = useState(0);
+  const [lastRequestTime, setLastRequestTime] = useState(0);
+  
+  // Hook created
 
   const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => ({
     id: dbProduct.sku, // Use SKU as ID for compatibility
@@ -76,48 +80,68 @@ export function useProducts(): UseProductsResult {
     setTotalProducts(0);
   }, []);
 
-  const getCurrentDeals = useCallback(async () => {
+  const getCurrentDeals = useCallback(async (page: number = currentPage) => {
+    console.log('getCurrentDeals called, page:', page);
     setLoading(true);
     setError(null);
 
     try {
-      // Query products table directly with proper filtering to eliminate duplicates
-      // Filter by valid merchant (18557) and ensure products are on sale
-      // Use current_deals view which has proper numeric filtering logic
-      const { data, error: queryError } = await supabase
+      // First, get total count of current deals (sale items only) using shared filters
+      const countQuery = supabase
+        .from('current_deals')
+        .select('*', { count: 'exact', head: true });
+      const { count, error: countError } = await applyDealFilters(countQuery);
+
+      if (countError) {
+        throw countError;
+      }
+
+      const total = count || 0;
+      setTotalProducts(total);
+      setTotalPages(Math.ceil(total / pageSize));
+
+      // Then get paginated data using shared filters
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const dataQuery = supabase
         .from('current_deals')
         .select('*')
-        .eq('merchant_id', 18557) // Only valid MEC merchant
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .not('sale_price', 'is', null)
-        .not('retail_price', 'is', null)
-        .gt('sale_price', 0)
-        .gt('retail_price', 0)
-        .order('calculated_discount_percent', { ascending: false });
+        .order('calculated_discount_percent', { ascending: false })
+        .range(from, to);
+      const { data, error: queryError } = await applyDealFilters(dataQuery);
 
       if (queryError) {
         throw queryError;
       }
 
       if (data) {
+        console.log('getCurrentDeals success:', {
+          dataLength: data.length,
+          totalCount: total,
+          totalPages: Math.ceil(total / pageSize),
+          currentPage: page
+        });
         const transformedProducts = data.map(transformDatabaseProduct);
         setProducts(transformedProducts);
-        setTotalProducts(data.length);
+        setCurrentPage(page);
         setError(null);
+      } else {
+        console.log('getCurrentDeals: No data returned');
       }
     } catch (err) {
       handleDatabaseError(err);
     } finally {
       setLoading(false);
     }
-  }, [handleDatabaseError]);
+  }, [handleDatabaseError, currentPage, pageSize]);
 
   const getProductsByMerchant = useCallback(async (merchantId: number) => {
     setLoading(true);
     setError(null);
 
     // Only allow valid merchant
-    if (merchantId !== 18557) {
+    if (merchantId !== DEAL_FILTERS.MERCHANT_ID) {
       setError('Invalid merchant ID');
       setLoading(false);
       return;
@@ -127,8 +151,8 @@ export function useProducts(): UseProductsResult {
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
-        .eq('merchant_id', 18557) // Only valid merchant
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
+        .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID) // Only valid merchant
+        .gte('last_sync_date', getDealDateFilter()) // Last 7 days
         .order('discount_percent', { ascending: false })
         .limit(100);
 
@@ -157,8 +181,8 @@ export function useProducts(): UseProductsResult {
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
-        .eq('merchant_id', 18557) // Only valid merchant
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
+        .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID) // Only valid merchant
+        .gte('last_sync_date', getDealDateFilter()) // Last 7 days
         .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
         .order('discount_percent', { ascending: false })
         .limit(100);
@@ -181,6 +205,16 @@ export function useProducts(): UseProductsResult {
   }, [handleDatabaseError]);
 
   const getAllProducts = useCallback(async (page: number = currentPage) => {
+    console.log('getAllProducts called, page:', page);
+    
+    // Prevent too frequent requests
+    const now = Date.now();
+    if (now - lastRequestTime < 500) {
+      console.log('getAllProducts: Request throttled');
+      return;
+    }
+    setLastRequestTime(now);
+    
     setLoading(true);
     setError(null);
 
@@ -189,8 +223,8 @@ export function useProducts(): UseProductsResult {
       const { count, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('merchant_id', 18557) // Only valid merchant
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // Last 7 days
+        .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID) // Only valid merchant
+        .gte('last_sync_date', getDealDateFilter()); // Last 7 days
 
       if (countError) {
         throw countError;
@@ -207,8 +241,8 @@ export function useProducts(): UseProductsResult {
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
-        .eq('merchant_id', 18557) // Only valid merchant
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
+        .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID) // Only valid merchant
+        .gte('last_sync_date', getDealDateFilter()) // Last 7 days
         .order('name', { ascending: true })
         .range(from, to);
 
@@ -238,8 +272,8 @@ export function useProducts(): UseProductsResult {
       const { count, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('merchant_id', 18557) // Only valid merchant
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
+        .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID) // Only valid merchant
+        .gte('last_sync_date', getDealDateFilter()) // Last 7 days
         .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`);
 
       if (countError) {
@@ -257,8 +291,8 @@ export function useProducts(): UseProductsResult {
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
-        .eq('merchant_id', 18557) // Only valid merchant
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
+        .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID) // Only valid merchant
+        .gte('last_sync_date', getDealDateFilter()) // Last 7 days
         .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
         .order('name', { ascending: true })
         .range(from, to);
@@ -294,10 +328,7 @@ export function useProducts(): UseProductsResult {
     setCurrentPage(1); // Reset to first page when changing page size
   }, []);
 
-  // Auto-load current deals on mount
-  useEffect(() => {
-    getCurrentDeals();
-  }, [getCurrentDeals]);
+  // Auto-load removed - let components control which data to load
 
   return {
     products,

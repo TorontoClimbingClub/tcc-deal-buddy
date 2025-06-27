@@ -35,6 +35,8 @@ import {
   Upload,
   Hash
 } from 'lucide-react';
+import { Sidebar as AceternitySidebar, SidebarBody, SidebarLink, useSidebar } from '@/components/ui/aceternity-sidebar';
+import { motion } from 'motion/react';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { useGlobalFilters } from '../contexts/FilterContext';
 import { useProducts } from '../hooks/useProducts';
@@ -147,7 +149,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
   const activeFilterCount = getActiveFilterCount();
 
   return (
-    <div className="w-80 h-screen bg-white border-r border-gray-200 flex flex-col">
+    <AceternitySidebar animate={true}>
+      <SidebarBody className="justify-between gap-4 bg-white border-r border-gray-200">
       {/* Logo/Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">

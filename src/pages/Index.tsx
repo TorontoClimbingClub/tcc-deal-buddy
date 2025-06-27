@@ -37,23 +37,14 @@ const DashboardContent = () => {
           Your intelligent price tracking and deal discovery dashboard for outdoor gear
           {hasActiveFilters && ' • Currently showing filtered results'}
         </p>
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-            Full Catalog Intelligence
-          </Badge>
-          <Badge variant="secondary" className="bg-green-50 text-green-700">
-            Real-time Alerts
-          </Badge>
-          <Badge variant="secondary" className="bg-purple-50 text-purple-700">
-            Smart Recommendations
-          </Badge>
-          {hasActiveFilters && (
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="bg-orange-50 text-orange-700">
               <Filter className="h-3 w-3 mr-1" />
               {getActiveFilterCount()} Filters Active
             </Badge>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Quick Stats Grid */}

@@ -81,9 +81,18 @@ export function useProducts(): UseProductsResult {
     setError(null);
 
     try {
+      // Query products table directly with proper filtering to eliminate duplicates
+      // Filter by valid merchant (18557) and ensure products are on sale
+      // Use current_deals view which has proper numeric filtering logic
       const { data, error: queryError } = await supabase
         .from('current_deals')
         .select('*')
+        .eq('merchant_id', 18557) // Only valid MEC merchant
+        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .not('sale_price', 'is', null)
+        .not('retail_price', 'is', null)
+        .gt('sale_price', 0)
+        .gt('retail_price', 0)
         .order('calculated_discount_percent', { ascending: false });
 
       if (queryError) {
@@ -107,13 +116,19 @@ export function useProducts(): UseProductsResult {
     setLoading(true);
     setError(null);
 
+    // Only allow valid merchant
+    if (merchantId !== 18557) {
+      setError('Invalid merchant ID');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
-        .eq('merchant_id', merchantId)
-        .eq('last_sync_date', new Date().toISOString().split('T')[0])
-        .not('sale_price', 'is', null)
+        .eq('merchant_id', 18557) // Only valid merchant
+        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
         .order('discount_percent', { ascending: false })
         .limit(100);
 
@@ -142,9 +157,9 @@ export function useProducts(): UseProductsResult {
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
-        .eq('last_sync_date', new Date().toISOString().split('T')[0])
+        .eq('merchant_id', 18557) // Only valid merchant
+        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
         .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
-        .not('sale_price', 'is', null)
         .order('discount_percent', { ascending: false })
         .limit(100);
 
@@ -174,7 +189,8 @@ export function useProducts(): UseProductsResult {
       const { count, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('last_sync_date', new Date().toISOString().split('T')[0]);
+        .eq('merchant_id', 18557) // Only valid merchant
+        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // Last 7 days
 
       if (countError) {
         throw countError;
@@ -191,7 +207,8 @@ export function useProducts(): UseProductsResult {
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
-        .eq('last_sync_date', new Date().toISOString().split('T')[0])
+        .eq('merchant_id', 18557) // Only valid merchant
+        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
         .order('name', { ascending: true })
         .range(from, to);
 
@@ -221,7 +238,8 @@ export function useProducts(): UseProductsResult {
       const { count, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('last_sync_date', new Date().toISOString().split('T')[0])
+        .eq('merchant_id', 18557) // Only valid merchant
+        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
         .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`);
 
       if (countError) {
@@ -239,7 +257,8 @@ export function useProducts(): UseProductsResult {
       const { data, error: queryError } = await supabase
         .from('products')
         .select('*')
-        .eq('last_sync_date', new Date().toISOString().split('T')[0])
+        .eq('merchant_id', 18557) // Only valid merchant
+        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // Last 7 days
         .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
         .order('name', { ascending: true })
         .range(from, to);

@@ -92,7 +92,7 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'deals', label: 'All Deals', icon: ShoppingCart },
-    { id: 'intelligence', label: 'Price Intelligence', icon: BarChart3 },
+    { id: 'intelligence', label: 'All Products', icon: BarChart3 },
     { id: 'alerts', label: 'My Alerts', icon: Bell },
     { id: 'favorites', label: 'Favorites', icon: Star },
     { id: 'trending', label: 'Trending', icon: TrendingUp }

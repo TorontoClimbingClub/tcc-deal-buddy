@@ -286,6 +286,7 @@ export async function dailyFullSync(): Promise<{
             try {
               const transformedProducts = apiResponse.products
                 .filter(validateProduct)
+                .map(transformAvantLinkProduct)
                 .map(transformProductDataToProduct);
               categoryValidationService.validateCategories(transformedProducts);
             } catch (categoryError) {
@@ -357,6 +358,7 @@ export async function dailyFullSync(): Promise<{
             try {
               const transformedProducts = apiResponse.products
                 .filter(validateProduct)
+                .map(transformAvantLinkProduct)
                 .map(transformProductDataToProduct);
               categoryValidationService.validateCategories(transformedProducts);
             } catch (categoryError) {
@@ -503,6 +505,7 @@ export async function syncMerchantProducts(merchantIds: string[], merchantName: 
           try {
             const transformedProducts = apiResponse.products
               .filter(validateProduct)
+              .map(transformAvantLinkProduct)
               .map(transformProductDataToProduct);
             categoryValidationService.validateCategories(transformedProducts);
           } catch (categoryError) {
@@ -630,6 +633,7 @@ export async function syncSaleProducts(searchTerm = 'sale', merchantIds?: string
       try {
         const transformedProducts = apiResponse.products
           .filter(validateProduct)
+          .map(transformAvantLinkProduct)
           .map(transformProductDataToProduct);
         categoryValidationService.validateCategories(transformedProducts);
         console.log('📊 Category validation updated after sync');

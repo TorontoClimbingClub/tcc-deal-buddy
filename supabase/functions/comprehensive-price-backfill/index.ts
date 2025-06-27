@@ -19,13 +19,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const affiliateId = Deno.env.get('AVANTLINK_AFFILIATE_ID')
-    const apiKey = Deno.env.get('AVANTLINK_API_KEY')
-
-    if (!affiliateId || !apiKey) {
-      throw new Error('Missing AvantLink API credentials')
-    }
-
     // Parse request parameters
     let requestBody: any = {}
     if (req.method === 'POST') {
@@ -34,6 +27,108 @@ serve(async (req) => {
       } catch (error) {
         // Ignore JSON parse errors for GET requests
       }
+    }
+
+    const action = requestBody.action || 'process' // Default to existing behavior
+
+    // Handle get_next_batch action
+    if (action === 'get_next_batch') {
+      const batchSize = requestBody.batch_size || 20
+
+      console.log(`📋 Getting next batch of ${batchSize} pending SKUs...`)
+
+      // Get pending SKUs
+      const { data: pendingSKUs, error } = await supabaseClient
+        .from('sku_api_tracking')
+        .select('sku, merchant_id')
+        .eq('status', 'pending')
+        .order('api_call_count', { ascending: true })
+        .order('created_at', { ascending: true })
+        .limit(batchSize)
+
+      if (error) {
+        throw new Error(`Failed to fetch pending SKUs: ${error.message}`)
+      }
+
+      console.log(`✅ Retrieved ${pendingSKUs?.length || 0} pending SKUs`)
+
+      return new Response(JSON.stringify({
+        success: true,
+        next_skus_to_process: pendingSKUs || [],
+        count: pendingSKUs?.length || 0
+      }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      })
+    }
+
+    // Handle update_status action
+    if (action === 'update_status') {
+      const { sku, merchant_id, status, error_message, price_record_count } = requestBody
+
+      if (!sku || !merchant_id || !status) {
+        throw new Error('Missing required fields: sku, merchant_id, status')
+      }
+
+      console.log(`🔄 Updating status for ${sku} to ${status}`)
+
+      // Get current API call count
+      const { data: current } = await supabaseClient
+        .from('sku_api_tracking')
+        .select('api_call_count')
+        .eq('sku', sku)
+        .eq('merchant_id', merchant_id)
+        .single()
+
+      const newCount = (current?.api_call_count || 0) + (status !== 'processing' ? 1 : 0)
+
+      // Prepare update data
+      const updateData: any = {
+        status,
+        last_api_call: new Date().toISOString(),
+        api_call_count: newCount,
+        updated_at: new Date().toISOString()
+      }
+
+      // Add conditional fields
+      if (status === 'completed' || status === 'no_data') {
+        updateData.last_successful_call = new Date().toISOString()
+      }
+
+      if (error_message) {
+        updateData.error_message = error_message
+      }
+
+      // Update status
+      const { error: updateError } = await supabaseClient
+        .from('sku_api_tracking')
+        .update(updateData)
+        .eq('sku', sku)
+        .eq('merchant_id', merchant_id)
+
+      if (updateError) {
+        throw new Error(`Failed to update SKU status: ${updateError.message}`)
+      }
+
+      console.log(`✅ Updated ${sku} status to ${status} (API calls: ${newCount})`)
+
+      return new Response(JSON.stringify({
+        success: true,
+        sku,
+        status,
+        api_call_count: newCount
+      }), { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      })
+    }
+
+    // Default: continue with existing processing logic
+    const affiliateId = Deno.env.get('AVANTLINK_AFFILIATE_ID')
+    const apiKey = Deno.env.get('AVANTLINK_API_KEY')
+
+    if (!affiliateId || !apiKey) {
+      throw new Error('Missing AvantLink API credentials')
     }
 
     const batchSize = requestBody.batch_size || 10

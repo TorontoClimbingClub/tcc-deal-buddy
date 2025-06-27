@@ -501,36 +501,33 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
             {savedFilters.map((filter) => (
               <Card key={filter.id} className="border-gray-100 hover:border-blue-200 transition-colors group">
                 <CardContent className="p-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <button
-                        onClick={() => handleApplyFilter(filter)}
-                        className="text-left w-full group"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Filter className="h-3 w-3 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600 truncate">
-                            {filter.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                          <Tag className="h-3 w-3" />
-                          <span>{filter.count || 0} items</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <Hash className="h-3 w-3" />
-                          <span className="font-mono">{filter.id}</span>
-                          {filter.description && (
-                            <span className="truncate">• {filter.description}</span>
-                          )}
-                        </div>
-                      </button>
+                  <button
+                    onClick={() => handleApplyFilter(filter)}
+                    className="text-left w-full group"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Filter className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                      <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600 break-words">
+                        {filter.name}
+                      </span>
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                      <Tag className="h-3 w-3 flex-shrink-0" />
+                      <span>{filter.count || 0} items</span>
+                    </div>
+                  </button>
+                  
+                  {/* Filter ID with inline action buttons */}
+                  <div className="flex items-center justify-between gap-2 text-xs text-gray-400">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-3 w-3 flex-shrink-0" />
+                      <span className="font-mono text-xs">{filter.id}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                        className="h-5 w-5 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                         onClick={() => handleShareFilter(filter)}
                         title="Copy filter ID"
                       >
@@ -539,7 +536,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                        className="h-5 w-5 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
                         onClick={() => removeFilter(filter.id)}
                         title="Remove filter"
                       >

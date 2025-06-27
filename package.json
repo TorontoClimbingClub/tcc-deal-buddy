@@ -13,7 +13,11 @@
     "ui:after": "node screenshot-fast.cjs after",
     "ui:compare": "node screenshot-fast.cjs compare",
     "ui:update-map": "node /mnt/ssd/Projects/claude/tools/ui-editor/map-generator.cjs .",
-    "ui:reset": "node /mnt/ssd/Projects/claude/tools/ui-editor/screenshot-workflow.cjs . reset"
+    "ui:reset": "node /mnt/ssd/Projects/claude/tools/ui-editor/screenshot-workflow.cjs . reset",
+    "sync:price-history": "node local-price-sync.js",
+    "sync:small-batch": "node local-price-sync.js 10 5",
+    "sync:large-batch": "node local-price-sync.js 50",
+    "sync:test": "node local-price-sync.js 5 1"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -50,6 +54,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^16.6.0",
     "embla-carousel-react": "^8.3.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",

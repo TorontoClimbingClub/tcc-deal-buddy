@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TrendingUp, Bell, Star, Grid, BarChart3, Calendar, Activity, DollarSign, Filter } from 'lucide-react';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import ProductGrid from '../components/ProductGrid';
 import { PriceIntelligenceDashboard } from '../components/PriceIntelligenceDashboard';
-import Sidebar from '../components/Sidebar';
+import { AppSidebar } from '../components/AppSidebar';
 import { usePriceAlerts } from '../hooks/usePriceAlerts';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { useRecentActivity } from '../hooks/useRecentActivity';
@@ -286,22 +288,34 @@ const DashboardContent = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar 
-        activeView={activeView}
-        onViewChange={setActiveView}
-      />
-      
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="p-6">
-            {renderMainContent()}
-          </div>
-        </ScrollArea>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar 
+          activeView={activeView}
+          onViewChange={setActiveView}
+        />
+        
+        <SidebarInset className="flex-1">
+          {/* Mobile header with trigger */}
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 md:hidden">
+            <SidebarTrigger className="-ml-1" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded flex items-center justify-center">
+                <span className="text-white text-xs font-bold">T</span>
+              </div>
+              <span className="font-semibold text-gray-900">TCC Deal Buddy</span>
+            </div>
+          </header>
+          
+          {/* Main content */}
+          <ScrollArea className="flex-1">
+            <div className="p-6">
+              {renderMainContent()}
+            </div>
+          </ScrollArea>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

@@ -316,6 +316,7 @@ export type Database = {
     Views: {
       current_deals: {
         Row: {
+          availability_score: number | null
           brand_name: string | null
           buy_url: string | null
           calculated_discount_percent: number | null
@@ -334,9 +335,11 @@ export type Database = {
           sale_price: number | null
           sku: string | null
           subcategory: string | null
+          sync_priority: number | null
           updated_at: string | null
         }
         Insert: {
+          availability_score?: number | null
           brand_name?: string | null
           buy_url?: string | null
           calculated_discount_percent?: never
@@ -355,9 +358,11 @@ export type Database = {
           sale_price?: number | null
           sku?: string | null
           subcategory?: string | null
+          sync_priority?: number | null
           updated_at?: string | null
         }
         Update: {
+          availability_score?: number | null
           brand_name?: string | null
           buy_url?: string | null
           calculated_discount_percent?: never
@@ -376,6 +381,7 @@ export type Database = {
           sale_price?: number | null
           sku?: string | null
           subcategory?: string | null
+          sync_priority?: number | null
           updated_at?: string | null
         }
         Relationships: []

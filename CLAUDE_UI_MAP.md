@@ -1,13 +1,237 @@
 # CLAUDE UI MAP
 *Auto-generated component mapping for precise UI editing*
 
-**Last Updated:** 2025-06-27T00:11:58.369Z
+**Last Updated:** 2025-06-27T02:29:40.431Z
 **Project:** tcc-deal-buddy
-**Components Scanned:** 62
+**Components Scanned:** 64
 
 ## 🗺️ COMPONENT HIERARCHY
 
 ### 📁 src/components/
+
+#### dashboardStats
+**File:** `src/components/AppSidebar.tsx`
+**Lines:** 602
+
+**Key Elements:**
+- **Sidebar** (line 159) - `sidebar`
+  - Context: `<Sidebar collapsible="icon" className="border-r">`
+- **SidebarHeader** (line 160) - `sidebarheader`
+  - Context: `<SidebarHeader className="p-4">`
+- **Search** (line 164) - `search`
+  - Context: `<Search className="h-5 w-5 text-white" />`
+- **Search** (line 174) - `search`
+  - Context: `<Search className="h-5 w-5 text-white" />`
+- **SidebarContent** (line 179) - `sidebarcontent`
+  - Context: `<SidebarContent>`
+- **SidebarGroup** (line 181) - `sidebargroup`
+  - Context: `<SidebarGroup>`
+- **SidebarGroupLabel** (line 182) - `sidebargrouplabel`
+  - Context: `<SidebarGroupLabel>Navigation</SidebarGroupLabel>`
+- **SidebarGroupContent** (line 183) - `sidebargroupcontent`
+  - Context: `<SidebarGroupContent>`
+- **SidebarMenu** (line 184) - `sidebarmenu`
+  - Context: `<SidebarMenu>`
+- **SidebarMenuItem** (line 190) - `sidebarmenuitem`
+  - Context: `<SidebarMenuItem key={item.id}>`
+- **SidebarMenuButton** (line 191) - `sidebarmenubutton`
+  - Context: `<SidebarMenuButton`
+- **Icon** (line 196) - `icon`
+  - Context: `<Icon className="h-4 w-4" />`
+- **SidebarSeparator** (line 206) - `sidebarseparator`
+  - Context: `<SidebarSeparator />`
+- **SidebarGroup** (line 212) - `sidebargroup`
+  - Context: `<SidebarGroup>`
+- **SidebarGroupLabel** (line 213) - `sidebargrouplabel`
+  - Context: `<SidebarGroupLabel>`
+- **Badge** (line 216) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700">`
+- **SidebarGroupContent** (line 221) - `sidebargroupcontent`
+  - Context: `<SidebarGroupContent>`
+- **Card** (line 222) - `card`
+  - Context: `<Card className="border-blue-200 bg-blue-50">`
+- **CardContent** (line 223) - `cardcontent`
+  - Context: `<CardContent className="p-3">`
+- **Button** (line 244) - `button`
+  - Context: `<Button`
+- **X** (line 250) - `x`
+  - Context: `<X className="h-3 w-3" />`
+- **SidebarGroup** (line 260) - `sidebargroup`
+  - Context: `<SidebarGroup>`
+- **SidebarGroupLabel** (line 261) - `sidebargrouplabel`
+  - Context: `<SidebarGroupLabel>Quick Search</SidebarGroupLabel>`
+- **SidebarGroupContent** (line 262) - `sidebargroupcontent`
+  - Context: `<SidebarGroupContent>`
+- **Search** (line 264) - `search`
+  - Context: `<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-...`
+- **Input** (line 265) - `input`
+  - Context: `<Input`
+- **SidebarGroup** (line 276) - `sidebargroup`
+  - Context: `<SidebarGroup>`
+- **Collapsible** (line 277) - `collapsible`
+  - Context: `<Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>`
+- **CollapsibleTrigger** (line 278) - `collapsibletrigger`
+  - Context: `<CollapsibleTrigger asChild>`
+- **SidebarGroupLabel** (line 279) - `sidebargrouplabel`
+  - Context: `<SidebarGroupLabel className="hover:bg-gray-50 rounded cursor-pointer">`
+- **ChevronUp** (line 283) - `chevronup`
+  - Context: `<ChevronUp className="h-4 w-4" />`
+- **ChevronDown** (line 285) - `chevrondown`
+  - Context: `<ChevronDown className="h-4 w-4" />`
+- **CollapsibleContent** (line 290) - `collapsiblecontent`
+  - Context: `<CollapsibleContent>`
+- **SidebarGroupContent** (line 291) - `sidebargroupcontent`
+  - Context: `<SidebarGroupContent className="space-y-4">`
+- **Label** (line 294) - `label`
+  - Context: `<Label className="text-xs text-gray-600 mb-1 block">Category</Label>`
+- **Select** (line 295) - `select`
+  - Context: `<Select`
+- **SelectTrigger** (line 299) - `selecttrigger`
+  - Context: `<SelectTrigger className="h-8 text-sm">`
+- **SelectValue** (line 300) - `selectvalue`
+  - Context: `<SelectValue placeholder="All Categories" />`
+- **SelectContent** (line 302) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 303) - `selectitem`
+  - Context: `<SelectItem value="all">All Categories</SelectItem>`
+- **SelectItem** (line 305) - `selectitem`
+  - Context: `<SelectItem key={cat.name} value={cat.name}>`
+- **Badge** (line 311) - `badge`
+  - Context: `<Badge variant="secondary" className="ml-2 text-xs">`
+- **Label** (line 323) - `label`
+  - Context: `<Label className="text-xs text-gray-600 mb-1 block">Brand</Label>`
+- **Select** (line 324) - `select`
+  - Context: `<Select`
+- **SelectTrigger** (line 328) - `selecttrigger`
+  - Context: `<SelectTrigger className="h-8 text-sm">`
+- **SelectValue** (line 329) - `selectvalue`
+  - Context: `<SelectValue placeholder="All Brands" />`
+- **SelectContent** (line 331) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 332) - `selectitem`
+  - Context: `<SelectItem value="all">All Brands</SelectItem>`
+- **SelectItem** (line 334) - `selectitem`
+  - Context: `<SelectItem key={brand} value={brand}>{brand}</SelectItem>`
+- **Label** (line 342) - `label`
+  - Context: `<Label className="text-xs text-gray-600 mb-2 block">`
+- **Slider** (line 345) - `slider`
+  - Context: `<Slider`
+- **Label** (line 357) - `label`
+  - Context: `<Label className="text-xs text-gray-600 mb-2 block">`
+- **Slider** (line 360) - `slider`
+  - Context: `<Slider`
+- **Label** (line 372) - `label`
+  - Context: `<Label className="text-xs text-gray-600 mb-1 block">Sort By</Label>`
+- **Select** (line 373) - `select`
+  - Context: `<Select value={filters.sortBy} onValueChange={(value: any) => setSortBy(value)}>`
+- **SelectTrigger** (line 374) - `selecttrigger`
+  - Context: `<SelectTrigger className="h-8 text-sm">`
+- **SelectValue** (line 375) - `selectvalue`
+  - Context: `<SelectValue />`
+- **SelectContent** (line 377) - `selectcontent`
+  - Context: `<SelectContent>`
+- **SelectItem** (line 378) - `selectitem`
+  - Context: `<SelectItem value="discount">Best Discount</SelectItem>`
+- **SelectItem** (line 379) - `selectitem`
+  - Context: `<SelectItem value="price">Lowest Price</SelectItem>`
+- **SelectItem** (line 380) - `selectitem`
+  - Context: `<SelectItem value="name">Name A-Z</SelectItem>`
+- **SelectItem** (line 381) - `selectitem`
+  - Context: `<SelectItem value="date">Newest First</SelectItem>`
+- **Label** (line 388) - `label`
+  - Context: `<Label className="text-xs text-gray-600 mb-2 block">View Mode</Label>`
+- **Button** (line 390) - `button`
+  - Context: `<Button`
+- **Grid3X3** (line 396) - `grid3x3`
+  - Context: `<Grid3X3 className="h-3 w-3 mr-1" />`
+- **Button** (line 399) - `button`
+  - Context: `<Button`
+- **List** (line 405) - `list`
+  - Context: `<List className="h-3 w-3 mr-1" />`
+- **SidebarSeparator** (line 415) - `sidebarseparator`
+  - Context: `<SidebarSeparator />`
+- **SidebarGroup** (line 418) - `sidebargroup`
+  - Context: `<SidebarGroup>`
+- **SidebarGroupLabel** (line 419) - `sidebargrouplabel`
+  - Context: `<SidebarGroupLabel>`
+- **Button** (line 423) - `button`
+  - Context: `<Button`
+- **Download** (line 430) - `download`
+  - Context: `<Download className="h-3 w-3" />`
+- **Button** (line 432) - `button`
+  - Context: `<Button`
+- **Plus** (line 439) - `plus`
+  - Context: `<Plus className="h-3 w-3" />`
+- **SidebarGroupContent** (line 444) - `sidebargroupcontent`
+  - Context: `<SidebarGroupContent>`
+- **Card** (line 447) - `card`
+  - Context: `<Card className="mb-3 border-red-200 bg-red-50">`
+- **CardContent** (line 448) - `cardcontent`
+  - Context: `<CardContent className="p-2">`
+- **Button** (line 451) - `button`
+  - Context: `<Button`
+- **X** (line 457) - `x`
+  - Context: `<X className="h-2 w-2" />`
+- **Card** (line 466) - `card`
+  - Context: `<Card className="mb-3 border-dashed border-blue-200">`
+- **CardContent** (line 467) - `cardcontent`
+  - Context: `<CardContent className="p-3">`
+- **Input** (line 469) - `input`
+  - Context: `<Input`
+- **Button** (line 476) - `button`
+  - Context: `<Button size="sm" onClick={handleImportFilter} className="h-8 px-2">`
+- **Download** (line 477) - `download`
+  - Context: `<Download className="h-3 w-3" />`
+- **Card** (line 486) - `card`
+  - Context: `<Card className="mb-3 border-dashed">`
+- **CardContent** (line 487) - `cardcontent`
+  - Context: `<CardContent className="p-3">`
+- **Input** (line 489) - `input`
+  - Context: `<Input`
+- **Button** (line 496) - `button`
+  - Context: `<Button size="sm" onClick={handleSaveCurrentFilter} className="h-8 px-2">`
+- **Plus** (line 497) - `plus`
+  - Context: `<Plus className="h-3 w-3" />`
+- **Card** (line 507) - `card`
+  - Context: `<Card key={filter.id} className="border-gray-100 hover:border-blue-200 transitio...`
+- **CardContent** (line 508) - `cardcontent`
+  - Context: `<CardContent className="p-3">`
+- **Filter** (line 514) - `filter`
+  - Context: `<Filter className="h-3 w-3 text-gray-400 flex-shrink-0" />`
+- **Tag** (line 520) - `tag`
+  - Context: `<Tag className="h-3 w-3 flex-shrink-0" />`
+- **Hash** (line 527) - `hash`
+  - Context: `<Hash className="h-3 w-3 flex-shrink-0" />`
+- **Button** (line 531) - `button`
+  - Context: `<Button`
+- **Copy** (line 538) - `copy`
+  - Context: `<Copy className="h-3 w-3" />`
+- **Button** (line 540) - `button`
+  - Context: `<Button`
+- **X** (line 547) - `x`
+  - Context: `<X className="h-3 w-3" />`
+- **Card** (line 556) - `card`
+  - Context: `<Card className="border-dashed border-gray-200">`
+- **CardContent** (line 557) - `cardcontent`
+  - Context: `<CardContent className="p-4 text-center">`
+- **Filter** (line 558) - `filter`
+  - Context: `<Filter className="h-8 w-8 mx-auto mb-2 text-gray-300" />`
+- **SidebarSeparator** (line 570) - `sidebarseparator`
+  - Context: `<SidebarSeparator />`
+- **SidebarGroup** (line 573) - `sidebargroup`
+  - Context: `<SidebarGroup>`
+- **SidebarGroupLabel** (line 574) - `sidebargrouplabel`
+  - Context: `<SidebarGroupLabel>Quick Stats</SidebarGroupLabel>`
+- **SidebarGroupContent** (line 575) - `sidebargroupcontent`
+  - Context: `<SidebarGroupContent>`
+- **Badge** (line 579) - `badge`
+  - Context: `<Badge variant="secondary">{dashboardStats.loading ? '...' : dashboardStats.tota...`
+- **Badge** (line 583) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">{dashboardStat...`
+- **Badge** (line 587) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700">0</Badge>`
+- **Badge** (line 591) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-purple-50 text-purple-700">{dashboardSt...`
 
 #### Header
 **File:** `src/components/Header.tsx`
@@ -601,183 +825,221 @@
 - **SelectItem** (line 118) - `selectitem`
   - Context: `<SelectItem value="200+">$200+</SelectItem>`
 
-#### Sidebar
+#### LogoSection
 **File:** `src/components/Sidebar.tsx`
-**Lines:** 601
+**Lines:** 867
 
 **Key Elements:**
-- **SidebarProps** (line 49) - `sidebarprops`
-  - Context: `const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {`
-- **Search** (line 155) - `search`
-  - Context: `<Search className="h-5 w-5 text-white" />`
-- **ScrollArea** (line 164) - `scrollarea`
-  - Context: `<ScrollArea className="flex-1">`
-- **Button** (line 176) - `button`
+- **Search** (line 57) - `search`
+  - Context: `<Search className="h-4 w-4 text-white" />`
+- **Button** (line 82) - `button`
   - Context: `<Button`
-- **Icon** (line 186) - `icon`
-  - Context: `<Icon className="h-4 w-4 mr-3" />`
-- **Badge** (line 189) - `badge`
-  - Context: `<Badge variant="secondary" className="text-xs">`
-- **Separator** (line 199) - `separator`
-  - Context: `<Separator className="mx-4" />`
-- **Badge** (line 208) - `badge`
-  - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700">`
-- **Card** (line 212) - `card`
+- **Filter** (line 88) - `filter`
+  - Context: `<Filter className="h-4 w-4" />`
+- **Badge** (line 99) - `badge`
+  - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700 text-xs">`
+- **ChevronUp** (line 108) - `chevronup`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **ChevronDown** (line 108) - `chevrondown`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **Card** (line 120) - `card`
   - Context: `<Card className="border-blue-200 bg-blue-50">`
-- **CardContent** (line 213) - `cardcontent`
+- **CardContent** (line 121) - `cardcontent`
   - Context: `<CardContent className="p-3">`
-- **Button** (line 234) - `button`
+- **Button** (line 142) - `button`
   - Context: `<Button`
-- **X** (line 240) - `x`
+- **X** (line 148) - `x`
   - Context: `<X className="h-3 w-3" />`
-- **Search** (line 254) - `search`
+- **Button** (line 166) - `button`
+  - Context: `<Button`
+- **Search** (line 172) - `search`
+  - Context: `<Search className="h-4 w-4" />`
+- **ChevronUp** (line 188) - `chevronup`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **ChevronDown** (line 188) - `chevrondown`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **Search** (line 200) - `search`
   - Context: `<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-...`
-- **Input** (line 255) - `input`
+- **Input** (line 201) - `input`
   - Context: `<Input`
-- **Button** (line 267) - `button`
+- **Button** (line 232) - `button`
   - Context: `<Button`
-- **ChevronUp** (line 274) - `chevronup`
-  - Context: `<ChevronUp className="h-4 w-4" />`
-- **ChevronDown** (line 276) - `chevrondown`
-  - Context: `<ChevronDown className="h-4 w-4" />`
-- **Label** (line 284) - `label`
+- **Sliders** (line 238) - `sliders`
+  - Context: `<Sliders className="h-4 w-4" />`
+- **ChevronUp** (line 254) - `chevronup`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **ChevronDown** (line 254) - `chevrondown`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **Label** (line 268) - `label`
   - Context: `<Label className="text-xs text-gray-600 mb-1 block">Category</Label>`
-- **Select** (line 285) - `select`
+- **Select** (line 269) - `select`
   - Context: `<Select`
-- **SelectTrigger** (line 289) - `selecttrigger`
+- **SelectTrigger** (line 273) - `selecttrigger`
   - Context: `<SelectTrigger className="h-8 text-sm">`
-- **SelectValue** (line 290) - `selectvalue`
+- **SelectValue** (line 274) - `selectvalue`
   - Context: `<SelectValue placeholder="All Categories" />`
-- **SelectContent** (line 292) - `selectcontent`
+- **SelectContent** (line 276) - `selectcontent`
   - Context: `<SelectContent>`
-- **SelectItem** (line 293) - `selectitem`
+- **SelectItem** (line 277) - `selectitem`
   - Context: `<SelectItem value="all">All Categories</SelectItem>`
-- **SelectItem** (line 295) - `selectitem`
+- **SelectItem** (line 279) - `selectitem`
   - Context: `<SelectItem key={cat.name} value={cat.name}>`
-- **Badge** (line 301) - `badge`
+- **Badge** (line 285) - `badge`
   - Context: `<Badge variant="secondary" className="ml-2 text-xs">`
-- **Label** (line 313) - `label`
+- **Label** (line 297) - `label`
   - Context: `<Label className="text-xs text-gray-600 mb-1 block">Brand</Label>`
-- **Select** (line 314) - `select`
+- **Select** (line 298) - `select`
   - Context: `<Select`
-- **SelectTrigger** (line 318) - `selecttrigger`
+- **SelectTrigger** (line 302) - `selecttrigger`
   - Context: `<SelectTrigger className="h-8 text-sm">`
-- **SelectValue** (line 319) - `selectvalue`
+- **SelectValue** (line 303) - `selectvalue`
   - Context: `<SelectValue placeholder="All Brands" />`
-- **SelectContent** (line 321) - `selectcontent`
+- **SelectContent** (line 305) - `selectcontent`
   - Context: `<SelectContent>`
-- **SelectItem** (line 322) - `selectitem`
+- **SelectItem** (line 306) - `selectitem`
   - Context: `<SelectItem value="all">All Brands</SelectItem>`
-- **SelectItem** (line 324) - `selectitem`
+- **SelectItem** (line 308) - `selectitem`
   - Context: `<SelectItem key={brand} value={brand}>{brand}</SelectItem>`
-- **Label** (line 332) - `label`
+- **Label** (line 316) - `label`
   - Context: `<Label className="text-xs text-gray-600 mb-2 block">`
-- **Slider** (line 335) - `slider`
+- **Slider** (line 319) - `slider`
   - Context: `<Slider`
-- **Label** (line 347) - `label`
+- **Label** (line 331) - `label`
   - Context: `<Label className="text-xs text-gray-600 mb-2 block">`
-- **Slider** (line 350) - `slider`
+- **Slider** (line 334) - `slider`
   - Context: `<Slider`
-- **Label** (line 362) - `label`
+- **Label** (line 346) - `label`
   - Context: `<Label className="text-xs text-gray-600 mb-1 block">Sort By</Label>`
-- **Select** (line 363) - `select`
+- **Select** (line 347) - `select`
   - Context: `<Select value={filters.sortBy} onValueChange={(value: any) => setSortBy(value)}>`
-- **SelectTrigger** (line 364) - `selecttrigger`
+- **SelectTrigger** (line 348) - `selecttrigger`
   - Context: `<SelectTrigger className="h-8 text-sm">`
-- **SelectValue** (line 365) - `selectvalue`
+- **SelectValue** (line 349) - `selectvalue`
   - Context: `<SelectValue />`
-- **SelectContent** (line 367) - `selectcontent`
+- **SelectContent** (line 351) - `selectcontent`
   - Context: `<SelectContent>`
-- **SelectItem** (line 368) - `selectitem`
+- **SelectItem** (line 352) - `selectitem`
   - Context: `<SelectItem value="discount">Best Discount</SelectItem>`
-- **SelectItem** (line 369) - `selectitem`
+- **SelectItem** (line 353) - `selectitem`
   - Context: `<SelectItem value="price">Lowest Price</SelectItem>`
-- **SelectItem** (line 370) - `selectitem`
+- **SelectItem** (line 354) - `selectitem`
   - Context: `<SelectItem value="name">Name A-Z</SelectItem>`
-- **SelectItem** (line 371) - `selectitem`
+- **SelectItem** (line 355) - `selectitem`
   - Context: `<SelectItem value="date">Newest First</SelectItem>`
-- **Label** (line 378) - `label`
+- **Label** (line 362) - `label`
   - Context: `<Label className="text-xs text-gray-600 mb-2 block">View Mode</Label>`
-- **Button** (line 380) - `button`
+- **Button** (line 364) - `button`
   - Context: `<Button`
-- **Grid3X3** (line 386) - `grid3x3`
+- **Grid3X3** (line 370) - `grid3x3`
   - Context: `<Grid3X3 className="h-3 w-3 mr-1" />`
-- **Button** (line 389) - `button`
+- **Button** (line 373) - `button`
   - Context: `<Button`
-- **List** (line 395) - `list`
+- **List** (line 379) - `list`
   - Context: `<List className="h-3 w-3 mr-1" />`
-- **Separator** (line 404) - `separator`
-  - Context: `<Separator className="mx-4" />`
-- **Button** (line 413) - `button`
+- **Button** (line 416) - `button`
   - Context: `<Button`
-- **Download** (line 420) - `download`
+- **Star** (line 422) - `star`
+  - Context: `<Star className="h-4 w-4" />`
+- **ChevronUp** (line 438) - `chevronup`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **ChevronDown** (line 438) - `chevrondown`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **Button** (line 449) - `button`
+  - Context: `<Button`
+- **Download** (line 456) - `download`
   - Context: `<Download className="h-3 w-3" />`
-- **Button** (line 422) - `button`
+- **Button** (line 458) - `button`
   - Context: `<Button`
-- **Plus** (line 429) - `plus`
+- **Plus** (line 465) - `plus`
   - Context: `<Plus className="h-3 w-3" />`
-- **Card** (line 436) - `card`
-  - Context: `<Card className="mb-3 border-red-200 bg-red-50">`
-- **CardContent** (line 437) - `cardcontent`
+- **Card** (line 480) - `card`
+  - Context: `<Card className="border-red-200 bg-red-50">`
+- **CardContent** (line 481) - `cardcontent`
   - Context: `<CardContent className="p-2">`
-- **Button** (line 440) - `button`
+- **Button** (line 484) - `button`
   - Context: `<Button`
-- **X** (line 446) - `x`
+- **X** (line 490) - `x`
   - Context: `<X className="h-2 w-2" />`
-- **Card** (line 455) - `card`
-  - Context: `<Card className="mb-3 border-dashed border-blue-200">`
-- **CardContent** (line 456) - `cardcontent`
+- **Card** (line 499) - `card`
+  - Context: `<Card className="border-dashed border-blue-200">`
+- **CardContent** (line 500) - `cardcontent`
   - Context: `<CardContent className="p-3">`
-- **Input** (line 458) - `input`
+- **Input** (line 502) - `input`
   - Context: `<Input`
-- **Button** (line 465) - `button`
+- **Button** (line 509) - `button`
   - Context: `<Button size="sm" onClick={handleImportFilter} className="h-8 px-2">`
-- **Download** (line 466) - `download`
+- **Download** (line 510) - `download`
   - Context: `<Download className="h-3 w-3" />`
-- **Card** (line 478) - `card`
-  - Context: `<Card className="mb-3 border-dashed">`
-- **CardContent** (line 479) - `cardcontent`
+- **Card** (line 522) - `card`
+  - Context: `<Card className="border-dashed">`
+- **CardContent** (line 523) - `cardcontent`
   - Context: `<CardContent className="p-3">`
-- **Input** (line 481) - `input`
+- **Input** (line 525) - `input`
   - Context: `<Input`
-- **Button** (line 488) - `button`
+- **Button** (line 532) - `button`
   - Context: `<Button size="sm" onClick={handleSaveCurrentFilter} className="h-8 px-2">`
-- **Plus** (line 489) - `plus`
+- **Plus** (line 533) - `plus`
   - Context: `<Plus className="h-3 w-3" />`
-- **Card** (line 502) - `card`
+- **Card** (line 546) - `card`
   - Context: `<Card key={filter.id} className="border-gray-100 hover:border-blue-200 transitio...`
-- **CardContent** (line 503) - `cardcontent`
+- **CardContent** (line 547) - `cardcontent`
   - Context: `<CardContent className="p-3">`
-- **Filter** (line 511) - `filter`
+- **Filter** (line 553) - `filter`
   - Context: `<Filter className="h-3 w-3 text-gray-400 flex-shrink-0" />`
-- **Tag** (line 517) - `tag`
+- **Tag** (line 559) - `tag`
   - Context: `<Tag className="h-3 w-3 flex-shrink-0" />`
-- **Hash** (line 521) - `hash`
+- **Hash** (line 567) - `hash`
   - Context: `<Hash className="h-3 w-3 flex-shrink-0" />`
-- **Button** (line 530) - `button`
+- **Button** (line 571) - `button`
   - Context: `<Button`
-- **Copy** (line 537) - `copy`
+- **Copy** (line 578) - `copy`
   - Context: `<Copy className="h-3 w-3" />`
-- **Button** (line 539) - `button`
+- **Button** (line 580) - `button`
   - Context: `<Button`
-- **X** (line 546) - `x`
+- **X** (line 587) - `x`
   - Context: `<X className="h-3 w-3" />`
-- **Card** (line 556) - `card`
+- **Card** (line 597) - `card`
   - Context: `<Card className="border-dashed border-gray-200">`
-- **CardContent** (line 557) - `cardcontent`
+- **CardContent** (line 598) - `cardcontent`
   - Context: `<CardContent className="p-4 text-center">`
-- **Filter** (line 558) - `filter`
+- **Filter** (line 599) - `filter`
   - Context: `<Filter className="h-8 w-8 mx-auto mb-2 text-gray-300" />`
-- **Separator** (line 569) - `separator`
-  - Context: `<Separator className="mx-4" />`
-- **Badge** (line 579) - `badge`
+- **Button** (line 622) - `button`
+  - Context: `<Button`
+- **BarChart3** (line 628) - `barchart3`
+  - Context: `<BarChart3 className="h-4 w-4" />`
+- **ChevronUp** (line 644) - `chevronup`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **ChevronDown** (line 644) - `chevrondown`
+  - Context: `{expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4"...`
+- **Badge** (line 658) - `badge`
   - Context: `<Badge variant="secondary">{dashboardStats.loading ? '...' : dashboardStats.tota...`
-- **Badge** (line 583) - `badge`
+- **Badge** (line 662) - `badge`
   - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">{dashboardStat...`
-- **Badge** (line 587) - `badge`
+- **Badge** (line 666) - `badge`
   - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700">0</Badge>`
-- **Badge** (line 591) - `badge`
+- **Badge** (line 670) - `badge`
   - Context: `<Badge variant="secondary" className="bg-purple-50 text-purple-700">{dashboardSt...`
+- **SidebarProps** (line 679) - `sidebarprops`
+  - Context: `const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {`
+- **AceternitySidebar** (line 776) - `aceternitysidebar`
+  - Context: `<AceternitySidebar animate={true}>`
+- **SidebarBody** (line 777) - `sidebarbody`
+  - Context: `<SidebarBody className="justify-between gap-4 bg-white border-r border-gray-200"...`
+- **LogoSection** (line 781) - `logosection`
+  - Context: `<LogoSection />`
+- **SidebarLink** (line 790) - `sidebarlink`
+  - Context: `<SidebarLink`
+- **CollapsibleActiveFilters** (line 814) - `collapsibleactivefilters`
+  - Context: `<CollapsibleActiveFilters`
+- **QuickSearchSection** (line 820) - `quicksearchsection`
+  - Context: `<QuickSearchSection`
+- **AdvancedFiltersSection** (line 825) - `advancedfilterssection`
+  - Context: `<AdvancedFiltersSection`
+- **SavedFiltersSection** (line 838) - `savedfilterssection`
+  - Context: `<SavedFiltersSection`
+- **QuickStatsSection** (line 860) - `quickstatssection`
+  - Context: `<QuickStatsSection dashboardStats={dashboardStats} />`
 
 ### 📁 src/components/ui/
 
@@ -796,6 +1058,34 @@
   - Context: `<ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />`
 - **AccordionPrimitive** (line 45) - `accordionprimitive`
   - Context: `<AccordionPrimitive.Content`
+
+#### useSidebar
+**File:** `src/components/ui/aceternity-sidebar.tsx`
+**Lines:** 188
+
+**Key Elements:**
+- **React** (line 15) - `react`
+  - Context: `setOpen: React.Dispatch<React.SetStateAction<boolean>>;`
+- **SidebarContextProps** (line 19) - `sidebarcontextprops`
+  - Context: `const SidebarContext = createContext<SidebarContextProps | undefined>(`
+- **React** (line 39) - `react`
+  - Context: `setOpen?: React.Dispatch<React.SetStateAction<boolean>>;`
+- **SidebarContext** (line 48) - `sidebarcontext`
+  - Context: `<SidebarContext.Provider value={{ open, setOpen, animate: animate }}>`
+- **React** (line 62) - `react`
+  - Context: `setOpen?: React.Dispatch<React.SetStateAction<boolean>>;`
+- **SidebarProvider** (line 66) - `sidebarprovider`
+  - Context: `<SidebarProvider open={open} setOpen={setOpen} animate={animate}>`
+- **DesktopSidebar** (line 75) - `desktopsidebar`
+  - Context: `<DesktopSidebar {...props} />`
+- **MobileSidebar** (line 76) - `mobilesidebar`
+  - Context: `<MobileSidebar {...(props as React.ComponentProps<"div">)} />`
+- **IconMenu2** (line 122) - `iconmenu2`
+  - Context: `<IconMenu2`
+- **AnimatePresence** (line 127) - `animatepresence`
+  - Context: `<AnimatePresence>`
+- **IconX** (line 146) - `iconx`
+  - Context: `<IconX />`
 
 #### alert-dialog
 **File:** `src/components/ui/alert-dialog.tsx`
@@ -1721,124 +2011,124 @@
 
 #### DashboardContent
 **File:** `src/pages/Index.tsx`
-**Lines:** 316
+**Lines:** 322
 
 **Key Elements:**
-- **Badge** (line 39) - `badge`
-  - Context: `<Badge variant="secondary" className="bg-blue-50 text-blue-700">`
 - **Badge** (line 42) - `badge`
-  - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">`
-- **Badge** (line 45) - `badge`
-  - Context: `<Badge variant="secondary" className="bg-purple-50 text-purple-700">`
-- **Badge** (line 49) - `badge`
   - Context: `<Badge variant="secondary" className="bg-orange-50 text-orange-700">`
-- **Filter** (line 50) - `filter`
+- **Filter** (line 43) - `filter`
   - Context: `<Filter className="h-3 w-3 mr-1" />`
-- **Card** (line 59) - `card`
+- **Card** (line 52) - `card`
   - Context: `<Card>`
-- **CardContent** (line 60) - `cardcontent`
+- **CardContent** (line 53) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **Grid** (line 73) - `grid`
+- **Grid** (line 66) - `grid`
   - Context: `<Grid className="h-8 w-8 text-blue-500" />`
-- **Card** (line 78) - `card`
+- **Card** (line 71) - `card`
   - Context: `<Card>`
-- **CardContent** (line 79) - `cardcontent`
+- **CardContent** (line 72) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **DollarSign** (line 90) - `dollarsign`
+- **DollarSign** (line 83) - `dollarsign`
   - Context: `<DollarSign className="h-8 w-8 text-green-500" />`
-- **Card** (line 95) - `card`
+- **Card** (line 88) - `card`
   - Context: `<Card>`
-- **CardContent** (line 96) - `cardcontent`
+- **CardContent** (line 89) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **Bell** (line 102) - `bell`
+- **Bell** (line 95) - `bell`
   - Context: `<Bell className="h-8 w-8 text-purple-500" />`
-- **Card** (line 107) - `card`
+- **Card** (line 100) - `card`
   - Context: `<Card>`
-- **CardContent** (line 108) - `cardcontent`
+- **CardContent** (line 101) - `cardcontent`
   - Context: `<CardContent className="p-6">`
-- **Activity** (line 118) - `activity`
+- **Activity** (line 111) - `activity`
   - Context: `<Activity className="h-8 w-8 text-orange-500" />`
-- **Card** (line 126) - `card`
+- **Card** (line 119) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 127) - `cardheader`
+- **CardHeader** (line 120) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 128) - `cardtitle`
+- **CardTitle** (line 121) - `cardtitle`
   - Context: `<CardTitle className="flex items-center gap-2">`
-- **Calendar** (line 129) - `calendar`
+- **Calendar** (line 122) - `calendar`
   - Context: `<Calendar className="h-5 w-5" />`
-- **CardDescription** (line 132) - `carddescription`
+- **CardDescription** (line 125) - `carddescription`
   - Context: `<CardDescription>Latest deals and price changes</CardDescription>`
-- **CardContent** (line 134) - `cardcontent`
+- **CardContent** (line 127) - `cardcontent`
   - Context: `<CardContent>`
-- **Calendar** (line 154) - `calendar`
+- **Calendar** (line 147) - `calendar`
   - Context: `<Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />`
-- **Badge** (line 166) - `badge`
+- **Badge** (line 159) - `badge`
   - Context: `<Badge`
-- **Card** (line 184) - `card`
+- **Card** (line 177) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 185) - `cardheader`
+- **CardHeader** (line 178) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 186) - `cardtitle`
+- **CardTitle** (line 179) - `cardtitle`
   - Context: `<CardTitle className="flex items-center gap-2">`
-- **TrendingUp** (line 187) - `trendingup`
+- **TrendingUp** (line 180) - `trendingup`
   - Context: `<TrendingUp className="h-5 w-5" />`
-- **CardDescription** (line 190) - `carddescription`
+- **CardDescription** (line 183) - `carddescription`
   - Context: `<CardDescription>Popular deals this week</CardDescription>`
-- **CardContent** (line 192) - `cardcontent`
+- **CardContent** (line 185) - `cardcontent`
   - Context: `<CardContent>`
-- **Badge** (line 206) - `badge`
+- **Badge** (line 199) - `badge`
   - Context: `<Badge variant="secondary" className="bg-green-50 text-green-700">`
-- **ProductGrid** (line 224) - `productgrid`
+- **ProductGrid** (line 217) - `productgrid`
   - Context: `return <ProductGrid />;`
-- **PriceIntelligenceDashboard** (line 226) - `priceintelligencedashboard`
+- **PriceIntelligenceDashboard** (line 219) - `priceintelligencedashboard`
   - Context: `return <PriceIntelligenceDashboard />;`
-- **Card** (line 229) - `card`
+- **Card** (line 222) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 230) - `cardheader`
+- **CardHeader** (line 223) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 231) - `cardtitle`
+- **CardTitle** (line 224) - `cardtitle`
   - Context: `<CardTitle>Price Alerts</CardTitle>`
-- **CardDescription** (line 232) - `carddescription`
+- **CardDescription** (line 225) - `carddescription`
   - Context: `<CardDescription>Manage your price tracking alerts</CardDescription>`
-- **CardContent** (line 234) - `cardcontent`
+- **CardContent** (line 227) - `cardcontent`
   - Context: `<CardContent>`
-- **Bell** (line 236) - `bell`
+- **Bell** (line 229) - `bell`
   - Context: `<Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />`
-- **Button** (line 241) - `button`
+- **Button** (line 234) - `button`
   - Context: `<Button>Create Your First Alert</Button>`
-- **Card** (line 248) - `card`
+- **Card** (line 241) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 249) - `cardheader`
+- **CardHeader** (line 242) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 250) - `cardtitle`
+- **CardTitle** (line 243) - `cardtitle`
   - Context: `<CardTitle>Favorite Products</CardTitle>`
-- **CardDescription** (line 251) - `carddescription`
+- **CardDescription** (line 244) - `carddescription`
   - Context: `<CardDescription>Your saved items and wishlist</CardDescription>`
-- **CardContent** (line 253) - `cardcontent`
+- **CardContent** (line 246) - `cardcontent`
   - Context: `<CardContent>`
-- **Star** (line 255) - `star`
+- **Star** (line 248) - `star`
   - Context: `<Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />`
-- **Button** (line 260) - `button`
+- **Button** (line 253) - `button`
   - Context: `<Button onClick={() => setActiveView('deals')}>Browse Deals</Button>`
-- **Card** (line 267) - `card`
+- **Card** (line 260) - `card`
   - Context: `<Card>`
-- **CardHeader** (line 268) - `cardheader`
+- **CardHeader** (line 261) - `cardheader`
   - Context: `<CardHeader>`
-- **CardTitle** (line 269) - `cardtitle`
+- **CardTitle** (line 262) - `cardtitle`
   - Context: `<CardTitle>Trending Deals</CardTitle>`
-- **CardDescription** (line 270) - `carddescription`
+- **CardDescription** (line 263) - `carddescription`
   - Context: `<CardDescription>Most popular deals this week</CardDescription>`
-- **CardContent** (line 272) - `cardcontent`
+- **CardContent** (line 265) - `cardcontent`
   - Context: `<CardContent>`
-- **TrendingUp** (line 274) - `trendingup`
+- **TrendingUp** (line 267) - `trendingup`
   - Context: `<TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />`
-- **Sidebar** (line 291) - `sidebar`
-  - Context: `<Sidebar`
-- **ScrollArea** (line 298) - `scrollarea`
-  - Context: `<ScrollArea className="h-full">`
-- **FilterProvider** (line 310) - `filterprovider`
+- **SidebarProvider** (line 282) - `sidebarprovider`
+  - Context: `<SidebarProvider>`
+- **AppSidebar** (line 284) - `appsidebar`
+  - Context: `<AppSidebar`
+- **SidebarInset** (line 289) - `sidebarinset`
+  - Context: `<SidebarInset className="flex-1">`
+- **SidebarTrigger** (line 292) - `sidebartrigger`
+  - Context: `<SidebarTrigger className="-ml-1" />`
+- **ScrollArea** (line 302) - `scrollarea`
+  - Context: `<ScrollArea className="flex-1">`
+- **FilterProvider** (line 315) - `filterprovider`
   - Context: `<FilterProvider>`
-- **DashboardContent** (line 311) - `dashboardcontent`
+- **DashboardContent** (line 316) - `dashboardcontent`
   - Context: `<DashboardContent />`
 
 #### NotFound
@@ -1848,7 +2138,7 @@
 ## 🎯 QUICK REFERENCE
 
 ### Main Components
-- **Sidebar**: `src/components/Sidebar.tsx`
+- **useSidebar**: `src/components/ui/aceternity-sidebar.tsx`
 
 ### Common Selectors
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,18 +21,8 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
   onSortByChange,
   onViewModeChange
 }) => {
-  const { state, isMobile, setInteracting } = useSidebar();
+  const { state, isMobile } = useSidebar();
   const [expanded, setExpanded] = useState(false);
-
-  const handleSelectOpenChange = (isOpen: boolean) => {
-    if (isOpen) {
-      // Set interacting immediately when opening dropdown
-      setInteracting(true);
-    } else {
-      // Delay setting to false when closing to prevent race conditions
-      setTimeout(() => setInteracting(false), 100);
-    }
-  };
 
   // Hide entire section when sidebar is collapsed
   if (state === "collapsed" && !isMobile) {
@@ -55,8 +46,7 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
       </Button>
       
       {expanded && (state === "expanded" || isMobile) && (
-        <div className="overflow-hidden px-2"
-        >
+        <div className="overflow-hidden px-2">
           <div className="space-y-4">
             {/* Category Dropdown */}
             <div>
@@ -64,7 +54,6 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
               <Select
                 value={filters.categories[0] || 'all'}
                 onValueChange={onCategoryChange}
-                onOpenChange={handleSelectOpenChange}
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="All Categories" />
@@ -94,7 +83,6 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
               <Select
                 value={filters.brands[0] || 'all'}
                 onValueChange={onBrandChange}
-                onOpenChange={handleSelectOpenChange}
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="All Brands" />
@@ -144,7 +132,6 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
               <Select 
                 value={filters.sortBy} 
                 onValueChange={onSortByChange}
-                onOpenChange={handleSelectOpenChange}
               >
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue />

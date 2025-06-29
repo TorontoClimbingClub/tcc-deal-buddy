@@ -10,7 +10,7 @@ type ProductsTable = Database['public']['Tables']['products'];
  * Common filters applied to deal queries to ensure consistency
  * between dashboard stats and All Deals page
  */
-export function applyDealFilters<T extends Record<string, unknown>>(
+export function applyDealFilters<T extends Record<string, any>>(
   query: PostgrestFilterBuilder<Database['public'], T, T[]>
 ): PostgrestFilterBuilder<Database['public'], T, T[]> {
   return query

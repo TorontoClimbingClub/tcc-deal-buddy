@@ -25,7 +25,7 @@ export const AllProductsPage: React.FC = () => {
     loading,
     error,
     totalProducts,
-    refreshProducts
+    autoLoadProducts
   } = useAllProducts();
 
   const { filters } = useGlobalFilters();
@@ -37,8 +37,8 @@ export const AllProductsPage: React.FC = () => {
   }, []);
 
   const handleLoadProducts = React.useCallback(() => {
-    refreshProducts();
-  }, [refreshProducts]);
+    autoLoadProducts();
+  }, [autoLoadProducts]);
 
   return (
     <div className="space-y-6">

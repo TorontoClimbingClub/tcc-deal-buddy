@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -6,95 +7,46 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface AvantLinkProduct {
-  // Actual field names from AvantLink API
-  lngProductId: string
-  strProductSKU: string
-  strProductName: string
-  strBrandName?: string
-  dblProductPrice: string
-  dblProductSalePrice?: string
-  strThumbnailImage?: string
-  strMediumImage?: string
-  strLargeImage?: string
-  strBuyURL: string
-  txtShortDescription?: string
-  txtLongDescription?: string
-  strDepartmentName?: string
-  strCategoryName?: string
-  strSubCategoryName?: string
-  strMerchantName: string
-  lngMerchantId: string
-  intSearchResultScore?: string
-}
-
-interface TransformedProduct {
-  sku: string
-  merchant_id: number
-  merchant_name: string
-  name: string
-  brand_name?: string
-  sale_price?: number
-  retail_price?: number
-  discount_percent?: number
-  discount_amount?: number
-  image_url?: string
-  buy_url?: string
-  description?: string
-  category?: string
-  subcategory?: string
-  sync_priority: number
-  availability_score: number
-}
-
-interface PriceRange {
-  min: number
-  max: number
-  label: string
-}
-
 interface SyncOptions {
   merchantIds?: number[]
   testMode?: boolean
   maxProductsTotal?: number
+  includePriceHistory?: boolean
 }
 
-// MEC Merchant Configuration
-const MERCHANT_CONFIG = {
-  18557: { name: 'MEC Mountain Equipment Company Ltd', priority: 1 }
+const SYNC_CONFIG = {
+  MERCHANTS: {
+    MEC: { id: 18557, name: 'MEC Mountain Equipment Company Ltd', priority: 1 }
+  },
+  AVANTLINK: {
+    AFFILIATE_ID: '348445',
+    BASE_URL: 'https://classic.avantlink.com/api.php',
+    RATE_LIMIT_MS: 500
+  },
+  SEARCH_STRATEGIES: [
+    { term: '*', description: 'All products' },
+    { term: 'jacket', description: 'Jackets' },
+    { term: 'clothing', description: 'Clothing items' },
+    { term: 'outdoor', description: 'Outdoor gear' },
+    { term: 'equipment', description: 'Equipment' }
+  ],
+  PRICE_RANGES: [
+    { min: 0, max: 25, label: 'Under $25' },
+    { min: 25, max: 50, label: '$25-50' },
+    { min: 50, max: 100, label: '$50-100' },
+    { min: 100, max: 200, label: '$100-200' },
+    { min: 200, max: 500, label: '$200-500' },
+    { min: 500, max: 1000, label: '$500-1000' },
+    { min: 1000, max: 9999, label: '$1000+' }
+  ]
 }
-
-const DEFAULT_MERCHANTS = Object.keys(MERCHANT_CONFIG).map(Number)
-
-// Use broad search approach instead of specific categories
-// Based on AvantLink API docs, we'll use search_term wildcards
-const SEARCH_STRATEGIES = [
-  { term: '*', description: 'All products' },
-  { term: 'jacket', description: 'Jackets' },
-  { term: 'clothing', description: 'Clothing items' },
-  { term: 'outdoor', description: 'Outdoor gear' },
-  { term: 'equipment', description: 'Equipment' }
-]
-
-// Price range subdivision strategy
-const PRICE_RANGES: PriceRange[] = [
-  { min: 0, max: 25, label: 'Under $25' },
-  { min: 25, max: 50, label: '$25-50' },
-  { min: 50, max: 100, label: '$50-100' },
-  { min: 100, max: 200, label: '$100-200' },
-  { min: 200, max: 500, label: '$200-500' },
-  { min: 500, max: 1000, label: '$500-1000' },
-  { min: 1000, max: 9999, label: '$1000+' }
-]
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Parse sync options from request
     let syncOptions: SyncOptions = {}
     if (req.method === 'POST') {
       try {
@@ -105,13 +57,11 @@ serve(async (req) => {
       }
     }
 
-    // Initialize Supabase client with service role key
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // AvantLink API credentials
     const affiliateId = Deno.env.get('AVANTLINK_AFFILIATE_ID')
     const apiKey = Deno.env.get('AVANTLINK_API_KEY')
     const websiteId = Deno.env.get('AVANTLINK_WEBSITE_ID')
@@ -120,23 +70,23 @@ serve(async (req) => {
       throw new Error('Missing AvantLink API credentials')
     }
 
-    // Determine target merchants
-    const targetMerchants = syncOptions.merchantIds || DEFAULT_MERCHANTS
+    const targetMerchants = syncOptions.merchantIds || [SYNC_CONFIG.MERCHANTS.MEC.id]
     const testMode = syncOptions.testMode || false
     const maxProductsTotal = syncOptions.maxProductsTotal || (testMode ? 1000 : 50000)
+    const includePriceHistory = syncOptions.includePriceHistory || false
 
-    console.log(`🚀 Starting comprehensive sync for merchants: ${targetMerchants.join(', ')}`)
-    console.log(`📊 Test mode: ${testMode}, Max products: ${maxProductsTotal}`)
+    console.log(`🚀 Starting unified comprehensive sync`)
+    console.log(`📊 Merchants: ${targetMerchants.join(', ')}, Test mode: ${testMode}`)
+    console.log(`📦 Max products: ${maxProductsTotal}, Price history: ${includePriceHistory}`)
 
-    // Create sync job record (using full_catalog type for compatibility)
+    // Create sync job record
     const { data: syncJob, error: syncJobError } = await supabaseClient
       .from('sync_jobs')
       .insert({
-        job_type: 'full_catalog',
-        job_subtype: 'comprehensive_price_subdivision',
+        job_type: 'comprehensive_sync',
+        job_subtype: 'unified_api_service',
         status: 'running',
-        merchant_ids: targetMerchants,
-        categories_synced: SEARCH_STRATEGIES.map(s => s.description)
+        merchant_ids: targetMerchants
       })
       .select()
       .single()
@@ -149,127 +99,82 @@ serve(async (req) => {
     let totalApiCalls = 0
     let productsAdded = 0
     let priceHistoryEntries = 0
-    const allProducts: TransformedProduct[] = []
+    const allProducts: any[] = []
     const startTime = Date.now()
-    const coverageReport = {
-      categoriesProcessed: 0,
-      priceRangesUsed: 0,
-      categoriesSubdivided: 0,
-      totalApiCalls: 0
+    const errors: string[] = []
+
+    // Rate limiter
+    let lastApiCall = 0
+    const rateLimitDelay = async () => {
+      const now = Date.now()
+      const timeSinceLastCall = now - lastApiCall
+      if (timeSinceLastCall < SYNC_CONFIG.AVANTLINK.RATE_LIMIT_MS) {
+        await new Promise(resolve => setTimeout(resolve, SYNC_CONFIG.AVANTLINK.RATE_LIMIT_MS - timeSinceLastCall))
+      }
+      lastApiCall = Date.now()
     }
 
     // Process each merchant
     for (const merchantId of targetMerchants) {
-      const merchantInfo = MERCHANT_CONFIG[merchantId as keyof typeof MERCHANT_CONFIG]
-      console.log(`\n🏪 Processing merchant ${merchantId} (${merchantInfo?.name || 'Unknown'})`)
+      console.log(`\n🏪 Processing merchant ${merchantId}`)
+      const merchantProducts: any[] = []
 
-      const merchantProducts: TransformedProduct[] = []
+      // Process each search strategy
+      for (const strategy of SYNC_CONFIG.SEARCH_STRATEGIES) {
+        if (totalRecords >= maxProductsTotal) break
 
-      // Process each search strategy with adaptive subdivision
-      for (const strategy of SEARCH_STRATEGIES) {
-        if (totalRecords >= maxProductsTotal) {
-          console.log(`📊 Reached maximum product limit (${maxProductsTotal}), stopping`)
-          break
-        }
-
-        console.log(`\n🔍 Processing search: ${strategy.description} (${strategy.term})`)
-        coverageReport.categoriesProcessed++
+        console.log(`🔍 Processing search: ${strategy.description}`)
 
         try {
-          // Step 1: Try basic search first
-          const searchResults = await searchTermBasic(
-            strategy.term, merchantId, affiliateId, apiKey, websiteId
+          await rateLimitDelay()
+
+          // Basic search
+          const searchResults = await searchProducts(
+            strategy.term, merchantId, affiliateId, websiteId
           )
           totalApiCalls++
-          coverageReport.totalApiCalls++
 
-          console.log(`  📦 Basic search returned ${searchResults.length} products`)
+          let finalResults = searchResults
 
-          // Step 2: Check if we hit the 200-result limit (indicating more products available)
+          // Use price subdivision if we hit the limit
           if (searchResults.length === 200) {
-            console.log(`  🔄 Search ${strategy.term} hit 200-result limit, subdividing by price ranges`)
-            coverageReport.categoriesSubdivided++
-
-            // Subdivide by price ranges
-            const subdivisionResults: TransformedProduct[] = []
-
-            for (const priceRange of PRICE_RANGES) {
-              if (totalRecords >= maxProductsTotal) break
-
-              console.log(`    💰 Searching ${strategy.term} in range ${priceRange.label}`)
-              
-              const rangeResults = await searchTermPriceRange(
-                strategy.term, priceRange, merchantId, affiliateId, apiKey, websiteId
-              )
-              totalApiCalls++
-              coverageReport.totalApiCalls++
-              coverageReport.priceRangesUsed++
-
-              console.log(`    💰 Range ${priceRange.label}: ${rangeResults.length} products`)
-              subdivisionResults.push(...rangeResults)
-
-              // Add delay to respect rate limits
-              await new Promise(resolve => setTimeout(resolve, 150))
-            }
-
-            // Use subdivision results instead of basic results
-            const transformedProducts = subdivisionResults
-              .map(product => transformProduct(product, merchantInfo?.priority || 3))
-              .filter(Boolean) as TransformedProduct[]
-
-            // Deduplicate by SKU
-            const newProducts = transformedProducts.filter(p => 
-              !merchantProducts.some(existing => existing.sku === p.sku)
+            console.log(`🔄 Search hit limit, using price subdivision`)
+            finalResults = await searchWithPriceSubdivision(
+              strategy.term, merchantId, affiliateId, websiteId, rateLimitDelay
             )
-
-            merchantProducts.push(...newProducts)
-            totalRecords += newProducts.length
-            console.log(`  ✅ Search ${strategy.term}: ${newProducts.length} unique products (${subdivisionResults.length} total from ranges)`)
-
-          } else {
-            // Use basic search results (no subdivision needed)
-            const transformedProducts = searchResults
-              .map(product => transformProduct(product, merchantInfo?.priority || 3))
-              .filter(Boolean) as TransformedProduct[]
-
-            const newProducts = transformedProducts.filter(p => 
-              !merchantProducts.some(existing => existing.sku === p.sku)
-            )
-
-            merchantProducts.push(...newProducts)
-            totalRecords += newProducts.length
-            console.log(`  ✅ Search ${strategy.term}: ${newProducts.length} unique products (no subdivision needed)`)
+            totalApiCalls += SYNC_CONFIG.PRICE_RANGES.length
           }
 
-        } catch (error) {
-          console.error(`❌ Error processing search ${strategy.term}:`, error)
-          // Continue with other searches even if one fails
-        }
+          const transformedProducts = finalResults
+            .map(transformProduct)
+            .filter(Boolean)
 
-        // Add delay between categories
-        await new Promise(resolve => setTimeout(resolve, 200))
+          const newProducts = transformedProducts.filter(p => 
+            !merchantProducts.some(existing => existing.sku === p.sku)
+          )
+
+          merchantProducts.push(...newProducts)
+          totalRecords += newProducts.length
+
+          console.log(`✅ ${strategy.description}: ${newProducts.length} unique products`)
+
+        } catch (error) {
+          console.error(`❌ Error processing ${strategy.description}:`, error)
+          errors.push(`${strategy.description}: ${error.message}`)
+        }
       }
 
       allProducts.push(...merchantProducts)
-      console.log(`\n🏪 Completed merchant ${merchantId}: ${merchantProducts.length} total products`)
+      console.log(`🏪 Merchant ${merchantId} completed: ${merchantProducts.length} products`)
     }
 
-    // Deduplicate products globally before inserting
-    const uniqueProducts = allProducts.reduce((acc: TransformedProduct[], product) => {
-      const existingIndex = acc.findIndex(p => p.sku === product.sku && p.merchant_id === product.merchant_id)
-      if (existingIndex === -1) {
-        acc.push(product)
-      }
-      return acc
-    }, [])
-
-    // Batch insert products to Supabase
-    if (uniqueProducts.length > 0) {
-      console.log(`\n💾 Inserting ${uniqueProducts.length} unique products to database (${allProducts.length} total found)...`)
+    // Save products to database
+    if (allProducts.length > 0) {
+      console.log(`💾 Saving ${allProducts.length} products to database...`)
       
       const { error: insertError } = await supabaseClient
         .from('products')
-        .upsert(uniqueProducts, {
+        .upsert(allProducts, {
           onConflict: 'sku,merchant_id,last_sync_date'
         })
 
@@ -277,39 +182,37 @@ serve(async (req) => {
         throw new Error(`Failed to insert products: ${insertError.message}`)
       }
 
-      productsAdded = uniqueProducts.length
+      productsAdded = allProducts.length
 
-      // Create price history records
-      const priceHistoryRecords = uniqueProducts
-        .filter(p => p.sale_price || p.retail_price)
-        .map(p => ({
-          product_sku: p.sku,
-          merchant_id: p.merchant_id,
-          price: p.sale_price || p.retail_price || 0,
-          is_sale: !!p.sale_price && p.sale_price < (p.retail_price || Infinity),
-          discount_percent: p.discount_percent || 0,
-          data_source: 'ComprehensiveSync',
-          price_change_reason: 'comprehensive_catalog_sync'
-        }))
+      // Create price history if requested
+      if (includePriceHistory) {
+        const priceHistoryRecords = allProducts
+          .filter(p => p.sale_price || p.retail_price)
+          .map(p => ({
+            product_sku: p.sku,
+            merchant_id: p.merchant_id,
+            price: p.sale_price || p.retail_price || 0,
+            is_sale: !!p.sale_price && p.sale_price < (p.retail_price || Infinity),
+            discount_percent: p.discount_percent || 0
+          }))
 
-      if (priceHistoryRecords.length > 0) {
-        const { error: historyError } = await supabaseClient
-          .from('price_history')
-          .upsert(priceHistoryRecords, {
-            onConflict: 'product_sku,merchant_id,recorded_date'
-          })
+        if (priceHistoryRecords.length > 0) {
+          const { error: historyError } = await supabaseClient
+            .from('price_history')
+            .upsert(priceHistoryRecords, {
+              onConflict: 'product_sku,merchant_id,recorded_date'
+            })
 
-        if (historyError) {
-          console.error('Failed to insert price history:', historyError.message)
-        } else {
-          priceHistoryEntries = priceHistoryRecords.length
+          if (!historyError) {
+            priceHistoryEntries = priceHistoryRecords.length
+          }
         }
       }
     }
 
     const processingTime = Date.now() - startTime
 
-    // Update sync job as completed
+    // Update sync job
     await supabaseClient
       .from('sync_jobs')
       .update({
@@ -317,17 +220,15 @@ serve(async (req) => {
         records_processed: totalRecords,
         api_calls_used: totalApiCalls,
         products_added: productsAdded,
-        products_updated: 0,
         price_history_entries: priceHistoryEntries,
         avg_processing_time_ms: processingTime,
         completed_at: new Date().toISOString()
       })
       .eq('id', syncJob.id)
 
-    // Generate comprehensive report
     const report = {
       success: true,
-      sync_type: 'comprehensive_category_price_subdivision',
+      sync_type: 'unified_comprehensive_sync',
       records_processed: totalRecords,
       api_calls_used: totalApiCalls,
       products_added: productsAdded,
@@ -336,19 +237,15 @@ serve(async (req) => {
       processing_time_ms: processingTime,
       processing_time_readable: `${Math.round(processingTime / 1000)}s`,
       sync_job_id: syncJob.id,
-      coverage_report: {
-        ...coverageReport,
-        search_strategies_total: SEARCH_STRATEGIES.length,
-        price_ranges_total: PRICE_RANGES.length,
-        subdivision_rate: `${((coverageReport.categoriesSubdivided / coverageReport.categoriesProcessed) * 100).toFixed(1)}%`,
-        avg_products_per_search: Math.round(totalRecords / coverageReport.categoriesProcessed),
-        api_efficiency: `${Math.round(totalRecords / totalApiCalls)} products per API call`
+      errors: errors.length > 0 ? errors : undefined,
+      performance_metrics: {
+        avg_products_per_api_call: Math.round(totalRecords / totalApiCalls),
+        processing_rate: `${Math.round(totalRecords / (processingTime / 1000))} products/second`,
+        error_rate: `${((errors.length / totalApiCalls) * 100).toFixed(2)}%`
       }
     }
 
-    console.log(`\n🎉 Comprehensive sync completed!`)
-    console.log(`📊 ${totalRecords} products, ${totalApiCalls} API calls, ${Math.round(processingTime / 1000)}s`)
-    console.log(`📈 Coverage: ${coverageReport.categoriesProcessed} categories, ${coverageReport.categoriesSubdivided} subdivided`)
+    console.log(`🎉 Unified sync completed: ${totalRecords} products, ${totalApiCalls} API calls`)
 
     return new Response(
       JSON.stringify(report),
@@ -359,13 +256,13 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ Comprehensive sync error:', error)
+    console.error('❌ Unified sync error:', error)
     
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
-        sync_type: 'comprehensive_category_price_subdivision'
+        sync_type: 'unified_comprehensive_sync'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -375,50 +272,45 @@ serve(async (req) => {
   }
 })
 
-// Helper function: Basic search term search  
-async function searchTermBasic(
+// Helper functions
+async function searchProducts(
   searchTerm: string,
   merchantId: number,
   affiliateId: string,
-  apiKey: string,
   websiteId: string
-): Promise<AvantLinkProduct[]> {
-  const apiUrl = new URL('https://classic.avantlink.com/api.php')
+): Promise<any[]> {
+  const apiUrl = new URL(SYNC_CONFIG.AVANTLINK.BASE_URL)
   apiUrl.searchParams.set('module', 'ProductSearch')
   apiUrl.searchParams.set('affiliate_id', affiliateId)
   apiUrl.searchParams.set('website_id', websiteId)
   apiUrl.searchParams.set('search_term', searchTerm)
   apiUrl.searchParams.set('merchant_ids', merchantId.toString())
   apiUrl.searchParams.set('search_results_count', '200')
-  apiUrl.searchParams.set('search_results_base', '0')
   apiUrl.searchParams.set('output', 'json')
 
   const response = await fetch(apiUrl.toString())
   
   if (!response.ok) {
-    throw new Error(`AvantLink API error: ${response.status} ${response.statusText}`)
+    throw new Error(`API error: ${response.status} ${response.statusText}`)
   }
 
   const data = await response.json()
   return Array.isArray(data) ? data : []
 }
 
-// Helper function: Search term + price range search with pagination
-async function searchTermPriceRange(
+async function searchWithPriceSubdivision(
   searchTerm: string,
-  priceRange: PriceRange,
   merchantId: number,
   affiliateId: string,
-  apiKey: string,
-  websiteId: string
-): Promise<AvantLinkProduct[]> {
-  const allResults: AvantLinkProduct[] = []
-  let currentBase = 0
-  let hasMoreResults = true
-  
-  // Paginate within this price range (up to 5 pages = 1000 products max)
-  while (hasMoreResults && allResults.length < 1000) {
-    const apiUrl = new URL('https://classic.avantlink.com/api.php')
+  websiteId: string,
+  rateLimitDelay: () => Promise<void>
+): Promise<any[]> {
+  const allResults: any[] = []
+
+  for (const priceRange of SYNC_CONFIG.PRICE_RANGES) {
+    await rateLimitDelay()
+
+    const apiUrl = new URL(SYNC_CONFIG.AVANTLINK.BASE_URL)
     apiUrl.searchParams.set('module', 'ProductSearch')
     apiUrl.searchParams.set('affiliate_id', affiliateId)
     apiUrl.searchParams.set('website_id', websiteId)
@@ -427,66 +319,36 @@ async function searchTermPriceRange(
     apiUrl.searchParams.set('search_price_maximum', priceRange.max.toString())
     apiUrl.searchParams.set('merchant_ids', merchantId.toString())
     apiUrl.searchParams.set('search_results_count', '200')
-    apiUrl.searchParams.set('search_results_base', currentBase.toString())
     apiUrl.searchParams.set('output', 'json')
 
-    const response = await fetch(apiUrl.toString())
-    
-    if (!response.ok) {
-      console.error(`Price range API error: ${response.status} ${response.statusText}`)
-      break
-    }
-
-    const data = await response.json()
-    
-    if (data && Array.isArray(data) && data.length > 0) {
-      allResults.push(...data)
+    try {
+      const response = await fetch(apiUrl.toString())
       
-      // Check if we got less than requested (indicates end of results)
-      if (data.length < 200) {
-        hasMoreResults = false
-      } else {
-        currentBase += 200
+      if (response.ok) {
+        const data = await response.json()
+        if (Array.isArray(data)) {
+          allResults.push(...data)
+        }
       }
-    } else {
-      hasMoreResults = false
-    }
-
-    // Safety break to prevent infinite loops
-    if (currentBase > 800) { // Max 5 pages per price range
-      break
+    } catch (error) {
+      console.error(`Price range ${priceRange.label} error:`, error)
     }
   }
 
   return allResults
 }
 
-// Transform AvantLink product to our format
-function transformProduct(product: AvantLinkProduct, merchantPriority: number = 3): TransformedProduct | null {
+function transformProduct(product: any): any | null {
   if (!product.strProductSKU || !product.lngMerchantId) {
     return null
   }
 
-  // Calculate sync priority
-  let syncPriority = merchantPriority
+  const salePrice = product.dblProductSalePrice ? parseFloat(product.dblProductSalePrice) : null
+  const retailPrice = product.dblProductPrice ? parseFloat(product.dblProductPrice) : null
   
-  // Boost priority for sale items
-  if (product.dblProductSalePrice && product.dblProductPrice) {
-    const salePrice = parseFloat(product.dblProductSalePrice)
-    const retailPrice = parseFloat(product.dblProductPrice)
-    if (salePrice < retailPrice) {
-      syncPriority = Math.max(1, syncPriority - 1)
-    }
-  }
-
-  // Calculate discount percentage
   let discountPercent = null
-  if (product.dblProductSalePrice && product.dblProductPrice) {
-    const salePrice = parseFloat(product.dblProductSalePrice)
-    const retailPrice = parseFloat(product.dblProductPrice)
-    if (salePrice < retailPrice) {
-      discountPercent = Math.round(((retailPrice - salePrice) / retailPrice) * 100)
-    }
+  if (salePrice && retailPrice && salePrice < retailPrice) {
+    discountPercent = Math.round(((retailPrice - salePrice) / retailPrice) * 100)
   }
 
   return {
@@ -495,8 +357,8 @@ function transformProduct(product: AvantLinkProduct, merchantPriority: number = 
     merchant_name: product.strMerchantName || '',
     name: product.strProductName || '',
     brand_name: product.strBrandName || null,
-    sale_price: product.dblProductSalePrice ? parseFloat(product.dblProductSalePrice) : null,
-    retail_price: product.dblProductPrice ? parseFloat(product.dblProductPrice) : null,
+    sale_price: salePrice,
+    retail_price: retailPrice,
     discount_percent: discountPercent,
     discount_amount: null,
     image_url: product.strThumbnailImage || product.strMediumImage || null,
@@ -504,7 +366,7 @@ function transformProduct(product: AvantLinkProduct, merchantPriority: number = 
     description: product.txtLongDescription || product.txtShortDescription || null,
     category: product.strCategoryName || null,
     subcategory: product.strSubCategoryName || null,
-    sync_priority: syncPriority,
+    sync_priority: 1,
     availability_score: 1.0
   }
 }

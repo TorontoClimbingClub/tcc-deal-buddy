@@ -3,6 +3,16 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Product } from '../components/ProductCard';
 
+// Filter interface for unified filtering
+interface ProductFilters {
+  search?: string;
+  categories?: string[];
+  brands?: string[];
+  priceRange?: { min: number; max: number };
+  discountMin?: number;
+  onSale?: boolean;
+}
+
 interface UseAllProductsResult {
   products: Product[];
   loading: boolean;
@@ -13,6 +23,7 @@ interface UseAllProductsResult {
   pageSize: number;
   loadAllProducts: (page?: number) => Promise<void>;
   searchProducts: (searchTerm: string, page?: number) => Promise<void>;
+  loadFilteredProducts: (filters: ProductFilters, page?: number) => Promise<void>;
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   autoLoadProducts: () => Promise<void>;
@@ -72,6 +83,75 @@ export function useAllProducts(): UseAllProductsResult {
     setError(err.message || 'Failed to fetch products');
     setProducts([]);
     setTotalProducts(0);
+  }, []);
+
+  // Build database query with all filters applied
+  const buildFilteredQuery = useCallback((filters: ProductFilters) => {
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('merchant_id', 18557)
+      .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+    let countQuery = supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('merchant_id', 18557)
+      .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+
+    // Search filter
+    if (filters.search && filters.search.trim()) {
+      const searchCondition = `name.ilike.%${filters.search}%,brand_name.ilike.%${filters.search}%,category.ilike.%${filters.search}%`;
+      query = query.or(searchCondition);
+      countQuery = countQuery.or(searchCondition);
+    }
+
+    // Category filter
+    if (filters.categories && filters.categories.length > 0) {
+      const categoryCondition = filters.categories.map(cat => `category.ilike.%${cat}%`).join(',');
+      // Only apply if no search is active, otherwise combine with AND logic
+      if (!filters.search || !filters.search.trim()) {
+        query = query.or(categoryCondition);
+        countQuery = countQuery.or(categoryCondition);
+      } else {
+        // When search is active, categories should be AND with search
+        query = query.or(categoryCondition);
+        countQuery = countQuery.or(categoryCondition);
+      }
+    }
+
+    // Brand filter
+    if (filters.brands && filters.brands.length > 0) {
+      query = query.in('brand_name', filters.brands);
+      countQuery = countQuery.in('brand_name', filters.brands);
+    }
+
+    // Price range filter - simplified for now, client-side filtering will handle complex price logic
+    if (filters.priceRange && filters.priceRange.min > 0) {
+      query = query.gte('retail_price', filters.priceRange.min);
+      countQuery = countQuery.gte('retail_price', filters.priceRange.min);
+    }
+    if (filters.priceRange && filters.priceRange.max < 10000) {
+      query = query.lte('retail_price', filters.priceRange.max);
+      countQuery = countQuery.lte('retail_price', filters.priceRange.max);
+    }
+
+    // On sale filter
+    if (filters.onSale) {
+      query = query.not('sale_price', 'is', null);
+      query = query.not('retail_price', 'is', null);
+      // Add condition where sale_price < retail_price
+      countQuery = countQuery.not('sale_price', 'is', null);
+      countQuery = countQuery.not('retail_price', 'is', null);
+    }
+
+    // Discount filter
+    if (filters.discountMin && filters.discountMin > 0) {
+      query = query.gte('discount_percent', filters.discountMin);
+      countQuery = countQuery.gte('discount_percent', filters.discountMin);
+    }
+
+    return { query, countQuery };
   }, []);
 
   const loadAllProducts = useCallback(async (page: number = 1) => {
@@ -134,13 +214,13 @@ export function useAllProducts(): UseAllProductsResult {
     }
   }, [handleDatabaseError, pageSize, lastRequestTime]);
 
-  const searchProducts = useCallback(async (searchTerm: string, page: number = 1) => {
-    // Search products by term
+  const loadFilteredProducts = useCallback(async (filters: ProductFilters, page: number = 1) => {
+    // Load products with all filters applied at database level
     
     // Request throttling
     const now = Date.now();
     if (now - lastRequestTime < 1000) {
-      console.log('useAllProducts: Search request throttled');
+      console.log('useAllProducts: Filtered request throttled');
       return;
     }
     setLastRequestTime(now);
@@ -149,13 +229,10 @@ export function useAllProducts(): UseAllProductsResult {
     setError(null);
 
     try {
-      // Get total count for search in ALL products
-      const { count, error: countError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('merchant_id', 18557)
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`);
+      const { query, countQuery } = buildFilteredQuery(filters);
+
+      // Get total count with filters applied
+      const { count, error: countError } = await countQuery;
 
       if (countError) {
         throw countError;
@@ -165,16 +242,11 @@ export function useAllProducts(): UseAllProductsResult {
       setTotalProducts(total);
       setTotalPages(Math.ceil(total / pageSize));
 
-      // Get paginated search results from ALL products
+      // Get paginated filtered results
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      const { data, error: queryError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('merchant_id', 18557)
-        .gte('last_sync_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .or(`name.ilike.%${searchTerm}%,brand_name.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%`)
+      const { data, error: queryError } = await query
         .order('name', { ascending: true })
         .range(from, to);
 
@@ -183,7 +255,6 @@ export function useAllProducts(): UseAllProductsResult {
       }
 
       if (data) {
-        // Search completed successfully
         const transformedProducts = data.map(transformDatabaseProduct);
         setProducts(transformedProducts);
         setCurrentPage(page);
@@ -194,7 +265,12 @@ export function useAllProducts(): UseAllProductsResult {
     } finally {
       setLoading(false);
     }
-  }, [handleDatabaseError, pageSize, lastRequestTime]);
+  }, [buildFilteredQuery, handleDatabaseError, pageSize, lastRequestTime, transformDatabaseProduct]);
+
+  const searchProducts = useCallback(async (searchTerm: string, page: number = 1) => {
+    // Legacy function - now uses unified filtering
+    await loadFilteredProducts({ search: searchTerm }, page);
+  }, [loadFilteredProducts]);
 
   const setPage = useCallback((page: number) => {
     setCurrentPage(page);
@@ -272,6 +348,7 @@ export function useAllProducts(): UseAllProductsResult {
     pageSize,
     loadAllProducts,
     searchProducts,
+    loadFilteredProducts,
     setPage,
     setPageSize,
     autoLoadProducts

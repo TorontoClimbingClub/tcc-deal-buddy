@@ -1,121 +1,125 @@
-# Screenshot Automation for TCC Deal Buddy
+# Component Mapping for TCC Deal Buddy
 
-This project includes automated screenshot tools using Playwright to capture the UI during development.
+This project uses a simplified UI editing approach with component mapping instead of screenshot automation.
 
-## Setup
+## Current Approach
 
-First, install Playwright as a dev dependency:
+### Component Mapping System
+
+The project uses automated component mapping for precise UI targeting:
 
 ```bash
-npm install --save-dev playwright
+# Generate component mapping
+npm run ui:update-map
+
+# Setup UI editing (if needed)
+npm run ui:setup
 ```
+
+### How It Works
+
+1. **Component Discovery**: Automatically scans `src/components/` and `src/pages/`
+2. **Mapping Generation**: Creates `CLAUDE_UI_MAP.md` with precise file:line locations
+3. **Live Development**: Use existing dev server for immediate feedback
+4. **Precise Targeting**: Edit components using exact file and line numbers
+
+### Benefits
+
+- **No Dependencies**: No Playwright, Sharp, or browser automation needed
+- **Faster Workflow**: Instant component targeting and live preview
+- **More Reliable**: No screenshot capture failures or compatibility issues
+- **Lightweight**: Zero additional setup or maintenance overhead
 
 ## Usage
 
-### One-time Screenshot
-
-Take a single screenshot of the current state:
+### Basic Workflow
 
 ```bash
-# Full page screenshot (desktop)
-node screenshot.cjs
+# Start development server
+npm run dev
 
-# Mobile viewport screenshot
-node screenshot.cjs --mobile
+# Generate/update component mapping
+npm run ui:update-map
 
-# Screenshot specific element
-node screenshot.cjs --element ".product-card"
-node screenshot.cjs --element "#header"
-
-# Show help
-node screenshot.cjs --help
+# Use CLAUDE_UI_MAP.md for precise component targeting
+# Make edits using file:line locations
+# Verify changes in browser with live reload
 ```
 
-### Auto-Screenshot on File Changes
+### Example Component Map Output
 
-Watch for file changes and automatically capture screenshots:
+```markdown
+#### ProductCard
+**File:** `src/components/ProductCard.tsx`
+**Lines:** 156
 
-```bash
-# Watch mode (desktop)
-node screenshot-watch.cjs
-
-# Watch mode (mobile)
-node screenshot-watch.cjs --mobile
+**Key Elements:**
+- **Card** (line 25) - `card`
+  - Context: `<Card className="product-card border rounded-lg">`
+- **Button** (line 45) - `button`
+  - Context: `<Button onClick={addToCart} className="add-to-cart-btn">`
 ```
 
-The watcher monitors:
-- `./src/components/**/*`
-- `./src/pages/**/*`
-- `./src/styles/**/*`
+## Migration from Screenshots
 
-## Output
+If you previously used screenshot-based workflows:
 
-Screenshots are organized in a dedicated directory structure:
+### Old System (No Longer Used):
+- ~~Playwright installation~~
+- ~~Screenshot capture and comparison~~
+- ~~Complex browser automation setup~~
+- ~~ui:before/after/compare commands~~
+
+### New System (Current):
+- Component mapping generation
+- Live development feedback
+- Direct file editing with precise targeting
+- Simplified npm scripts
+
+## File Structure
 
 ```
-D:\Projects\screenshots\
-└── tcc-deal-buddy\
-    ├── 2024-06-25\                   # Date-organized folders
-    │   ├── screenshot-desktop-2024-06-25T10-30-45.png
-    │   ├── screenshot-mobile-2024-06-25T10-31-12.png
-    │   └── auto-2024-06-25T10-35-20-desktop.png
-    ├── 2024-06-26\                   # Next day's screenshots
-    │   └── ...
-    └── latest\                       # Symlinks to most recent
-        ├── latest-desktop.png        # Always points to newest desktop screenshot
-        └── latest-mobile.png         # Always points to newest mobile screenshot
+tcc-deal-buddy/
+├── CLAUDE_UI_MAP.md              # Auto-generated component mapping
+├── package.json                  # Contains ui:update-map script
+├── src/
+│   ├── components/               # Components scanned for mapping
+│   ├── pages/                    # Pages scanned for mapping
+│   └── ...
+└── (dev server provides live preview)
 ```
-
-**Windows paths:**
-- Screenshots: `D:\Projects\screenshots\tcc-deal-buddy\YYYY-MM-DD\`
-- Latest: `D:\Projects\screenshots\tcc-deal-buddy\latest\`
-
-**WSL paths (for Claude Code):**
-- Screenshots: `/mnt/ssd/Projects/screenshots/tcc-deal-buddy/YYYY-MM-DD/`
-- Latest: `/mnt/ssd/Projects/screenshots/tcc-deal-buddy/latest/`
 
 ## Integration with Claude Code
 
-I can now read screenshots to see UI changes:
+Claude Code can now:
 
-1. After making code changes, run: `node screenshot.cjs`
-2. I can then read the screenshot: `/mnt/ssd/Projects/screenshots/tcc-deal-buddy/latest/latest-desktop.png`
-3. This allows me to verify changes and suggest improvements
+1. **Generate component maps** using `npm run ui:update-map`
+2. **Target components precisely** using file:line locations from the map
+3. **Verify changes immediately** using the live dev server
+4. **Maintain accuracy** without complex screenshot workflows
 
-The organized structure provides:
-- **Date-based organization**: Easy to track changes over time
-- **Project separation**: Screenshots don't clutter application code
-- **Latest symlinks**: Quick access to most recent screenshots
-- **Clean project directory**: Application code stays separate from generated assets
+The component mapping provides:
+- **Precise targeting**: Exact file and line locations
+- **Component context**: Understanding of component structure
+- **Live feedback**: Immediate preview through dev server
+- **Framework integration**: Works seamlessly with React + Vite
 
 ## Troubleshooting
 
-- **"Connection refused" error**: Make sure the dev server is running (`npm run dev`)
-- **WSL issues**: The scripts include WSL-compatible browser launch arguments
-- **Permission errors**: Run `chmod +x screenshot*.cjs` to make scripts executable
+- **"Component map not found"**: Run `npm run ui:update-map` to generate
+- **"Components not detected"**: Ensure `src/components/` directory exists
+- **"Live preview not working"**: Verify dev server is running with `npm run dev`
 
 ## Advanced Usage
 
-You can also create custom screenshot scripts:
+For complex UI modifications:
 
-```javascript
-// custom-screenshot.js
-const { chromium } = require('playwright');
+1. **Run component mapping**: `npm run ui:update-map`
+2. **Review component hierarchy**: Check `CLAUDE_UI_MAP.md`
+3. **Target specific components**: Use exact file:line locations
+4. **Verify changes**: Use live dev server for immediate feedback
+5. **Update mapping**: Re-run after major component changes
 
-async function captureCustomView() {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  
-  // Navigate and interact with the page
-  await page.goto('http://localhost:8080');
-  await page.click('.search-button');
-  await page.fill('input[type="search"]', 'climbing shoes');
-  
-  // Capture after interaction
-  await page.screenshot({ path: './screenshots/search-results.png' });
-  
-  await browser.close();
-}
+---
 
-captureCustomView();
-```
+*This simplified approach eliminates screenshot complexity while maintaining the precision and reliability needed for effective UI development.*

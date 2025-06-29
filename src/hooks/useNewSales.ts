@@ -8,6 +8,19 @@ export interface NewSales {
   time: string;
   type: 'new_deal' | 'price_drop' | 'sale_start' | 'alert';
   timestamp: Date;
+  // Additional product data for modal integration
+  product_sku: string;
+  merchant_id: number;
+  image_url?: string;
+  current_price: number;
+  previous_price?: number;
+  discount_percent?: number;
+  sale_price?: number;
+  retail_price?: number;
+  affiliate_url?: string;
+  brand_name?: string;
+  description?: string;
+  category?: string;
 }
 
 interface UseNewSalesResult {
@@ -96,7 +109,7 @@ export function useNewSales(): UseNewSalesResult {
                     current_price: currentRecord.price,
                     previous_price: previousRecord.price,
                     drop_percent: Math.round(dropPercent),
-                    price_drop_timestamp: currentRecord.created_at,
+                    price_drop_timestamp: currentRecord.recorded_date,
                     is_sale: currentRecord.is_sale,
                     discount_percent: currentRecord.discount_percent
                   });
@@ -119,12 +132,19 @@ export function useNewSales(): UseNewSalesResult {
           // Get unique SKUs to fetch product names
           const uniqueSkus = [...new Set(priceDrops.map(drop => drop.product_sku))];
           
-          const { data: products } = await supabase
+          const { data: products, error: productsError } = await supabase
             .from('products')
-            .select('sku, name, sale_price, retail_price, discount_percent, image_url')
+            .select('sku, name, sale_price, retail_price, discount_percent, image_url, brand_name, description, buy_url, merchant_id, category')
             .in('sku', uniqueSkus);
+            
+          if (productsError) {
+            console.error('🔍 useNewSales: Products query error:', productsError);
+          }
 
           const productMap = new Map(products?.map(p => [p.sku, p]) || []);
+          
+          // Debug: Log the fetched product data
+          console.log('🔍 useNewSales: Fetched products from database:', products);
 
           // Convert to activities using the actual price drop timestamp
           priceDrops.forEach((priceDrop) => {
@@ -133,13 +153,35 @@ export function useNewSales(): UseNewSalesResult {
               // Use the calculated drop percentage from price history analysis
               const discountText = `-${priceDrop.drop_percent}%`;
 
+              // Debug: Log individual product data for debugging
+              console.log(`🔍 Product ${priceDrop.product_sku}:`, {
+                image_url: product.image_url,
+                description: product.description,
+                brand_name: product.brand_name,
+                buy_url: product.buy_url,
+                category: product.category
+              });
+
               allActivities.push({
                 id: `price_drop_${priceDrop.product_sku}_${priceDrop.price_drop_timestamp}`,
                 item: product.name,
                 change: discountText,
                 time: formatTimeAgo(new Date(priceDrop.price_drop_timestamp)),
                 type: 'price_drop',
-                timestamp: new Date(priceDrop.price_drop_timestamp)
+                timestamp: new Date(priceDrop.price_drop_timestamp),
+                // Additional product data for modal integration
+                product_sku: priceDrop.product_sku,
+                merchant_id: product.merchant_id || priceDrop.merchant_id,
+                image_url: product.image_url,
+                current_price: priceDrop.current_price,
+                previous_price: priceDrop.previous_price,
+                discount_percent: product.discount_percent,
+                sale_price: product.sale_price,
+                retail_price: product.retail_price,
+                affiliate_url: product.buy_url,
+                brand_name: product.brand_name,
+                description: product.description,
+                category: product.category
               });
             }
           });
@@ -157,10 +199,14 @@ export function useNewSales(): UseNewSalesResult {
 
           if (fallbackSales && fallbackSales.length > 0) {
             const fallbackSkus = [...new Set(fallbackSales.map(sale => sale.product_sku))];
-            const { data: fallbackProducts } = await supabase
+            const { data: fallbackProducts, error: fallbackError } = await supabase
               .from('products')
-              .select('sku, name, discount_percent')
+              .select('sku, name, sale_price, retail_price, discount_percent, image_url, brand_name, description, buy_url, merchant_id, category')
               .in('sku', fallbackSkus);
+              
+            if (fallbackError) {
+              console.error('🔍 useNewSales: Fallback products query error:', fallbackError);
+            }
 
             const fallbackProductMap = new Map(fallbackProducts?.map(p => [p.sku, p]) || []);
 
@@ -173,7 +219,19 @@ export function useNewSales(): UseNewSalesResult {
                   change: product.discount_percent > 0 ? `-${product.discount_percent}%` : 'On Sale',
                   time: formatTimeAgo(new Date(sale.created_at)),
                   type: 'price_drop',
-                  timestamp: new Date(sale.created_at)
+                  timestamp: new Date(sale.created_at),
+                  // Additional product data for modal integration
+                  product_sku: sale.product_sku,
+                  merchant_id: sale.merchant_id,
+                  image_url: product.image_url,
+                  current_price: product.sale_price || product.retail_price || 0,
+                  previous_price: product.retail_price,
+                  discount_percent: product.discount_percent,
+                  sale_price: product.sale_price,
+                  retail_price: product.retail_price,
+                  affiliate_url: product.buy_url,
+                  brand_name: product.brand_name,
+                  description: product.description
                 });
               }
             });
@@ -181,28 +239,53 @@ export function useNewSales(): UseNewSalesResult {
         }
       }
 
-      // 2. Get newly added products (last 3 days)
+      // 2. Get newly added products (last 3 days) with complete data
       const { data: newProducts, error: newProductsError } = await supabase
         .from('products')
-        .select('name, created_at, sku, sale_price, retail_price')
+        .select('name, created_at, sku, sale_price, retail_price, discount_percent, image_url, brand_name, description, buy_url, merchant_id, category')
         .gte('created_at', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString())
         .not('sale_price', 'is', null)
         .order('created_at', { ascending: false })
         .limit(10);
 
-      if (newProductsError) throw newProductsError;
+      if (newProductsError) {
+        console.error('🔍 useNewSales: New products query error:', newProductsError);
+      }
+
+      console.log('🔍 useNewSales: Fetched new products:', newProducts);
 
       if (newProducts) {
         newProducts.forEach(product => {
           // Only show as "New Deal" if it has a discount
           if (product.retail_price && product.sale_price < product.retail_price) {
+            console.log(`🔍 New Product ${product.sku}:`, {
+              image_url: product.image_url,
+              description: product.description,
+              brand_name: product.brand_name,
+              buy_url: product.buy_url,
+              category: product.category
+            });
+
             allActivities.push({
               id: `new_${product.sku}`,
               item: product.name,
               change: 'New Deal',
               time: formatTimeAgo(new Date(product.created_at)),
               type: 'new_deal',
-              timestamp: new Date(product.created_at)
+              timestamp: new Date(product.created_at),
+              // Complete product data for modal integration
+              product_sku: product.sku,
+              merchant_id: product.merchant_id,
+              image_url: product.image_url,
+              current_price: product.sale_price,
+              previous_price: product.retail_price,
+              discount_percent: product.discount_percent,
+              sale_price: product.sale_price,
+              retail_price: product.retail_price,
+              affiliate_url: product.buy_url,
+              brand_name: product.brand_name,
+              description: product.description,
+              category: product.category
             });
           }
         });
@@ -217,8 +300,10 @@ export function useNewSales(): UseNewSalesResult {
       setError(null);
 
     } catch (err: any) {
-      console.error('❌ New sales error:', err);
-      setError(`Error: ${err.message}`);
+      console.error('❌ New sales error details:', err);
+      console.error('❌ Error message:', err.message);
+      console.error('❌ Error stack:', err.stack);
+      setError(`Error: ${err.message || 'Unknown error occurred'}`);
       setActivities([]);
     } finally {
       setLoading(false);

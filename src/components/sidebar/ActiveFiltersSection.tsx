@@ -3,8 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useSidebar } from '@/components/ui/aceternity-sidebar';
+import { useSidebar } from '@/components/ui/sidebar';
+import { SidebarGroupLabel } from '@/components/ui/sidebar';
 import { ActiveFiltersSectionProps } from './types';
 
 export const ActiveFiltersSection: React.FC<ActiveFiltersSectionProps> = ({ 
@@ -12,7 +12,7 @@ export const ActiveFiltersSection: React.FC<ActiveFiltersSectionProps> = ({
   filters, 
   onClearFilters 
 }) => {
-  const { open, isMobile } = useSidebar();
+  const { state, isMobile } = useSidebar();
   const [expanded, setExpanded] = useState(false);
 
   if (activeFilterCount === 0) return null;
@@ -26,36 +26,26 @@ export const ActiveFiltersSection: React.FC<ActiveFiltersSectionProps> = ({
       >
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
-          <motion.span
-            animate={{
-              opacity: (open || isMobile) ? 1 : 0,
-              display: (open || isMobile) ? "inline" : "none",
-            }}
-          >
+          <span className={`transition-opacity duration-200 ${
+            state === 'expanded' || isMobile ? 'opacity-100' : 'group-data-[collapsible=icon]:opacity-0'
+          }`}>
             Active Filters
-          </motion.span>
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="bg-blue-50 text-blue-700 text-xs">
             {activeFilterCount}
           </Badge>
-          <motion.div
-            animate={{
-              opacity: (open || isMobile) ? 1 : 0,
-              display: (open || isMobile) ? "block" : "none",
-            }}
-          >
+          <div className={`transition-opacity duration-200 ${
+            state === 'expanded' || isMobile ? 'opacity-100' : 'opacity-0'
+          }`}>
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </motion.div>
+          </div>
         </div>
       </Button>
       
-      {expanded && (open || isMobile) && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="overflow-hidden"
+      {expanded && (state === 'expanded' || isMobile) && (
+        <div className="overflow-hidden"
         >
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-3">
@@ -90,7 +80,7 @@ export const ActiveFiltersSection: React.FC<ActiveFiltersSectionProps> = ({
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       )}
     </div>
   );

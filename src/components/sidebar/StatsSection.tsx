@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useSidebar } from '@/components/ui/aceternity-sidebar';
+import { useSidebar } from '@/components/ui/sidebar';
 import { StatsSectionProps } from './types';
 
 export const StatsSection: React.FC<StatsSectionProps> = ({ dashboardStats }) => {
-  const { open, isMobile } = useSidebar();
+  const { state, isMobile } = useSidebar();
   const [expanded, setExpanded] = useState(false);
+
+  // Hide entire section when sidebar is collapsed
+  if (state === "collapsed" && !isMobile) {
+    return null;
+  }
 
   return (
     <div className="space-y-2">
@@ -19,31 +23,15 @@ export const StatsSection: React.FC<StatsSectionProps> = ({ dashboardStats }) =>
       >
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4" />
-          <motion.span
-            animate={{
-              opacity: (open || isMobile) ? 1 : 0,
-              display: (open || isMobile) ? "inline" : "none",
-            }}
-          >
-            Quick Stats
-          </motion.span>
+          <span>Quick Stats</span>
         </div>
-        <motion.div
-          animate={{
-            opacity: (open || isMobile) ? 1 : 0,
-            display: (open || isMobile) ? "block" : "none",
-          }}
-        >
+        <div>
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </motion.div>
+        </div>
       </Button>
       
-      {expanded && (open || isMobile) && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="overflow-hidden px-2"
+      {expanded && (state === "expanded" || isMobile) && (
+        <div className="overflow-hidden px-2"
         >
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -69,7 +57,7 @@ export const StatsSection: React.FC<StatsSectionProps> = ({ dashboardStats }) =>
               </Badge>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

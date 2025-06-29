@@ -1,16 +1,17 @@
 import React from 'react';
 import { Search, Pin, PinOff } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useSidebar } from '@/components/ui/aceternity-sidebar';
+import { useSidebar } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 
 export const LogoSection: React.FC = () => {
-  const { open, isMobile, pinned, setPinned, setOpen } = useSidebar();
+  const { state, open, setOpen, isMobile, isPinned, setIsPinned } = useSidebar();
   
+  // Toggle pin functionality
   const handleTogglePin = () => {
-    setPinned(!pinned);
-    // If pinning, ensure sidebar is open
-    if (!pinned) {
+    const newPinnedState = !isPinned;
+    setIsPinned(newPinnedState);
+    if (newPinnedState) {
+      // When pinning, ensure sidebar is open
       setOpen(true);
     }
   };
@@ -21,16 +22,12 @@ export const LogoSection: React.FC = () => {
         <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
           <Search className="h-4 w-4 text-white" />
         </div>
-        <motion.div
-          animate={{
-            opacity: (open || pinned) ? 1 : 0,
-            display: (open || pinned) ? "block" : "none",
-          }}
-          className="whitespace-nowrap hidden md:block md:inline"
-        >
+        <div className={`whitespace-nowrap transition-opacity duration-150 ease-in-out ${
+          state === 'expanded' ? 'opacity-100' : 'group-data-[collapsible=icon]:opacity-0'
+        } hidden md:block`}>
           <h2 className="text-lg font-semibold text-gray-900">TCC Deal Buddy</h2>
           <p className="text-sm text-gray-500">Price Intelligence</p>
-        </motion.div>
+        </div>
         {/* Mobile-specific logo text that's always visible */}
         <div className="md:hidden">
           <h2 className="text-lg font-semibold text-gray-900">TCC Deal Buddy</h2>
@@ -38,28 +35,26 @@ export const LogoSection: React.FC = () => {
         </div>
       </div>
       
-      {/* Pin Button - Only visible on desktop when sidebar is open */}
-      <motion.div
-        animate={{
-          opacity: (open || pinned) && !isMobile ? 1 : 0,
-          display: (open || pinned) && !isMobile ? "block" : "none",
-        }}
-        className="hidden md:block"
-      >
+      {/* Toggle Button - Only visible on desktop when sidebar is expanded */}
+      <div className={`transition-opacity duration-150 ease-in-out ${
+        state === 'expanded' && !isMobile ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      } hidden md:block`}>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleTogglePin}
-          className="h-6 w-6 p-0 hover:bg-gray-100"
-          title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
+          className={`h-6 w-6 p-0 hover:bg-gray-100 ${
+            isPinned ? 'bg-blue-100 text-blue-600' : 'text-gray-600'
+          }`}
+          title={isPinned ? "🔒 PINNED - Click to unpin and enable auto-close" : "📌 Click to pin sidebar open"}
         >
-          {pinned ? (
-            <PinOff className="h-3 w-3 text-gray-600" />
+          {isPinned ? (
+            <PinOff className="h-3 w-3" />
           ) : (
-            <Pin className="h-3 w-3 text-gray-600" />
+            <Pin className="h-3 w-3" />
           )}
         </Button>
-      </motion.div>
+      </div>
     </div>
   );
 };

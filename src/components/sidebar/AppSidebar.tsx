@@ -1,6 +1,14 @@
 import React from 'react';
 import { Home, ShoppingCart, TrendingUp, Bell, Star, BarChart3 } from 'lucide-react';
-import { Sidebar as AceternitySidebar, SidebarBody } from '@/components/ui/aceternity-sidebar';
+import { 
+  Sidebar, 
+  SidebarContent, 
+  SidebarHeader, 
+  SidebarFooter,
+  SidebarGroup,
+  SidebarProvider,
+  useSidebar 
+} from '@/components/ui/sidebar';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
 import { useProducts } from '../../hooks/useProducts';
 import { useProductOptions, useFilteredProducts } from '../../hooks/useFilteredProducts';
@@ -42,11 +50,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = React.memo(({ activeView, o
 
   const menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, count: null },
-    { id: 'deals', label: 'All Deals', icon: ShoppingCart, count: null },
+    { id: 'deals', label: 'All Deals', icon: TrendingUp, count: null },
     { id: 'all-products', label: 'All Products', icon: BarChart3, count: null },
     { id: 'alerts', label: 'My Alerts', icon: Bell, count: null },
-    { id: 'favorites', label: 'Favorites', icon: Star, count: null },
-    { id: 'trending', label: 'Trending', icon: TrendingUp, count: null }
+    { id: 'cart', label: 'Shopping Cart', icon: ShoppingCart, count: null },
+    { id: 'trending', label: 'Trending', icon: Star, count: null }
   ];
 
   const handleApplyFilter = (filter: any) => {
@@ -89,31 +97,38 @@ export const AppSidebar: React.FC<AppSidebarProps> = React.memo(({ activeView, o
   const activeFilterCount = getActiveFilterCount();
 
   return (
-    <AceternitySidebar animate={true}>
-      <SidebarBody className="justify-between gap-4 bg-white border-r border-gray-200">
-        {/* Top Section */}
-        <div className="flex flex-col gap-4">
-          <LogoSection />
-          <NavigationSection 
-            menuItems={menuItems}
-            activeView={activeView}
-            onViewChange={onViewChange}
-          />
-        </div>
+    <Sidebar 
+      side="left" 
+      variant="sidebar" 
+      collapsible="icon"
+      className="bg-white border-r border-gray-200"
+    >
+      <SidebarHeader className="p-4">
+        <LogoSection />
+        <NavigationSection 
+          menuItems={menuItems}
+          activeView={activeView}
+          onViewChange={onViewChange}
+        />
+      </SidebarHeader>
 
-        {/* Scrollable Middle Section */}
-        <div className="flex flex-col gap-4 overflow-y-auto flex-1">
+      <SidebarContent className="flex flex-col gap-4 px-4 overflow-y-auto">
+        <SidebarGroup>
           <ActiveFiltersSection 
             activeFilterCount={activeFilterCount}
             filters={filters}
             onClearFilters={clearFilters}
           />
-          
+        </SidebarGroup>
+        
+        <SidebarGroup>
           <SearchSection 
             filters={filters}
             onSearchChange={setSearch}
           />
-          
+        </SidebarGroup>
+        
+        <SidebarGroup>
           <FiltersSection
             filters={filters}
             categoriesWithCounts={categoriesWithCounts}
@@ -126,7 +141,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = React.memo(({ activeView, o
             onSortByChange={setSortBy}
             onViewModeChange={setViewMode}
           />
-          
+        </SidebarGroup>
+        
+        <SidebarGroup>
           <SavedFiltersSection
             savedFilters={savedFilters}
             onSaveFilter={saveCurrentFilter}
@@ -137,13 +154,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = React.memo(({ activeView, o
             urlError={urlError}
             onClearError={clearError}
           />
-        </div>
+        </SidebarGroup>
+      </SidebarContent>
 
-        {/* Bottom Section - Stats */}
-        <div className="mt-auto">
-          <StatsSection dashboardStats={dashboardStats} />
-        </div>
-      </SidebarBody>
-    </AceternitySidebar>
+      <SidebarFooter className="p-4">
+        <StatsSection dashboardStats={dashboardStats} />
+      </SidebarFooter>
+    </Sidebar>
   );
 });

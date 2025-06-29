@@ -123,39 +123,18 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
     <div className="space-y-6">
       {/* Header Section */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              🛍️ All Deals
-            </h1>
-            <p className="text-gray-600">
-              {hasActiveFilters 
-                ? `Sale items filtered by your sidebar settings (applied to current page)`
-                : `Current sale items from MEC - showing ${pageSize} deals per page`
-              }
-            </p>
-            {totalProducts === 0 && !loading && (
-              <Button 
-                onClick={handleLoadDeals}
-                className="mt-3 bg-blue-600 hover:bg-blue-700"
-              >
-                Reload Sale Items
-              </Button>
-            )}
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-blue-600">
-              {hasActiveFilters ? filteredProducts.length : totalProducts}
-            </div>
-            <div className="text-sm text-gray-500">
-              {hasActiveFilters ? 'filtered on page' : 'total deals'}
-            </div>
-            {!hasActiveFilters && (
-              <div className="text-xs text-gray-400 mt-1">
-                Page {currentPage} of {totalPages}
-              </div>
-            )}
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            🛍️ All Deals
+          </h1>
+          {totalProducts === 0 && !loading && (
+            <Button 
+              onClick={handleLoadDeals}
+              className="mt-3 bg-blue-600 hover:bg-blue-700"
+            >
+              Reload Sale Items
+            </Button>
+          )}
         </div>
         
         {/* Active Filter Indicator */}
@@ -181,53 +160,53 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
       )}
 
       {/* Quick Stats - Using Filtered Data */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">
+          <CardContent className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-center md:text-left">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">
                   {hasActiveFilters ? 'Filtered Deals' : 'Total Deals'}
                 </p>
-                <p className="text-2xl font-bold text-blue-600">{filterStats.totalDeals}</p>
+                <p className="text-lg md:text-2xl font-bold text-blue-600">{hasActiveFilters ? filterStats.totalDeals : totalProducts}</p>
               </div>
-              <Package className="h-8 w-8 text-blue-500" />
+              <Package className="h-4 w-4 md:h-8 md:w-8 text-blue-500 mx-auto md:mx-0 mt-1 md:mt-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Avg. Discount</p>
-                <p className="text-2xl font-bold text-green-600">{filterStats.avgDiscount}%</p>
+          <CardContent className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-center md:text-left">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">Avg. Discount</p>
+                <p className="text-lg md:text-2xl font-bold text-green-600">{filterStats.avgDiscount}%</p>
               </div>
-              <Percent className="h-8 w-8 text-green-500" />
+              <Percent className="h-4 w-4 md:h-8 md:w-8 text-green-500 mx-auto md:mx-0 mt-1 md:mt-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Categories</p>
-                <p className="text-2xl font-bold text-purple-600">{filterStats.categoriesCount}</p>
+          <CardContent className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-center md:text-left">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">Categories</p>
+                <p className="text-lg md:text-2xl font-bold text-purple-600">{filterStats.categoriesCount}</p>
               </div>
-              <Filter className="h-8 w-8 text-purple-500" />
+              <Filter className="h-4 w-4 md:h-8 md:w-8 text-purple-500 mx-auto md:mx-0 mt-1 md:mt-0" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Best Deal</p>
-                <p className="text-2xl font-bold text-red-600">{filterStats.bestDeal}%</p>
+          <CardContent className="p-2 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between text-center md:text-left">
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">Best Deal</p>
+                <p className="text-lg md:text-2xl font-bold text-red-600">{filterStats.bestDeal}%</p>
               </div>
-              <Star className="h-8 w-8 text-red-500" />
+              <Star className="h-4 w-4 md:h-8 md:w-8 text-red-500 mx-auto md:mx-0 mt-1 md:mt-0" />
             </div>
           </CardContent>
         </Card>
@@ -270,7 +249,7 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
       {/* Products Grid/List */}
       {products.length > 0 && (
         <div className={filters.viewMode === 'grid' 
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+          ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4" 
           : "space-y-4"
         }>
           {filteredProducts.map((product) => (

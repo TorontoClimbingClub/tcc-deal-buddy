@@ -21,7 +21,7 @@ const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
-const SIDEBAR_WIDTH_ICON = "3rem"
+const SIDEBAR_WIDTH_ICON = "4rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
 type SidebarContext = {
@@ -32,6 +32,12 @@ type SidebarContext = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  isHovered: boolean
+  setIsHovered: (hovered: boolean) => void
+  isPinned: boolean
+  setIsPinned: (pinned: boolean) => void
+  isPinnedRef: React.RefObject<boolean>
+  isHoveredRef: React.RefObject<boolean>
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
@@ -67,6 +73,21 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
+    const [isHovered, setIsHovered] = React.useState(false)
+    const [isPinned, setIsPinned] = React.useState(false) // Start unpinned to show hover animations
+    
+    // Use refs to track current state for timeout callbacks
+    const isPinnedRef = React.useRef(isPinned)
+    const isHoveredRef = React.useRef(isHovered)
+    
+    
+    React.useEffect(() => {
+      isPinnedRef.current = isPinned
+    }, [isPinned])
+    
+    React.useEffect(() => {
+      isHoveredRef.current = isHovered
+    }, [isHovered])
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -123,8 +144,14 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile,
         toggleSidebar,
+        isHovered,
+        setIsHovered,
+        isPinned,
+        setIsPinned,
+        isPinnedRef,
+        isHoveredRef,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, isHovered, setIsHovered, isPinned, setIsPinned, isPinnedRef, isHoveredRef]
     )
 
     return (
@@ -173,7 +200,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const { isMobile, state, openMobile, setOpenMobile, setOpen, isHovered, setIsHovered, isPinned, isPinnedRef, isHoveredRef } = useSidebar()
 
     if (collapsible === "none") {
       return (
@@ -222,7 +249,7 @@ const Sidebar = React.forwardRef<
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
-            "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
+            "duration-150 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-in-out",
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
             variant === "floating" || variant === "inset"
@@ -232,7 +259,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
+            "duration-150 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-in-out md:flex",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
@@ -242,6 +269,25 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
+          onMouseEnter={() => {
+            if (!isMobile && !isPinned) {
+              setIsHovered(true)
+              if (state === "collapsed") {
+                setOpen(true)
+              }
+            }
+          }}
+          onMouseLeave={() => {
+            if (!isMobile && !isPinned) {
+              setIsHovered(false)
+              setTimeout(() => {
+                // Use refs to get current state instead of stale closure values
+                if (!isPinnedRef.current && !isHoveredRef.current) {
+                  setOpen(false)
+                }
+              }, 300)
+            }
+          }}
           {...props}
         >
           <div
@@ -437,7 +483,7 @@ const SidebarGroupLabel = React.forwardRef<
       ref={ref}
       data-sidebar="group-label"
       className={cn(
-        "duration-200 flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opa] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        "duration-150 flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opacity] ease-in-out focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}

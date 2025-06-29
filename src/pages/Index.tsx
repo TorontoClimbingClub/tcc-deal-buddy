@@ -6,14 +6,28 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Bell, Star, Grid, BarChart3, Calendar, Activity, DollarSign, Filter } from 'lucide-react';
 import ProductGrid from '../components/ProductGrid';
 import { AllProductsPage } from '../components/AllProductsPage';
-import { AppSidebar } from '../components/AppSidebar';
+import { CartPage } from '../components/CartPage';
+import { CartFooter } from '../components/CartFooter';
+import { AppSidebar } from '../components/sidebar';
+import ProductModal from '../components/ProductModal';
+import { Product } from '../components/ProductCard';
 import { usePriceAlerts } from '../hooks/usePriceAlerts';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import { useNewSales } from '../hooks/useNewSales';
+import { useNewSales, NewSales } from '../hooks/useNewSales';
+import { useTrendingCategories } from '../hooks/useTrendingCategories';
 import { FilterProvider, useGlobalFilters } from '../contexts/FilterContext';
+import { CartProvider } from '../contexts/CartContext';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 const DashboardContent = () => {
   const [activeView, setActiveView] = useState('dashboard');
+  const [sidebarFloating, setSidebarFloating] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedSaleContext, setSelectedSaleContext] = useState<NewSales | null>(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   // Handle hash changes for navigation
   useEffect(() => {
@@ -39,7 +53,52 @@ const DashboardContent = () => {
   const dashboardStats = useDashboardStats();
   
   const { activities, loading: activitiesLoading, error: activitiesError } = useNewSales();
+  const { trendingCategories, loading: trendingLoading, error: trendingError } = useTrendingCategories();
   const { filters, getActiveFilterCount, isFilterActive } = useGlobalFilters();
+
+  // Handle New Sales item click
+  const handleNewSalesClick = (activity: NewSales) => {
+    // Debug: Log the actual NewSales data to see what we're working with
+    console.log('🔍 NewSales Activity Data:', activity);
+    console.log('🔍 Image URL:', activity.image_url);
+    console.log('🔍 Description:', activity.description);
+    console.log('🔍 Current Price:', activity.current_price);
+    console.log('🔍 Previous Price:', activity.previous_price);
+    console.log('🔍 Affiliate URL:', activity.affiliate_url);
+    
+    // Convert NewSales to Product format for ProductModal with proper null safety and enhanced data
+    const product: Product = {
+      id: activity.product_sku || `fallback_${Date.now()}`,
+      sku: activity.product_sku || '',
+      name: activity.item || 'Unknown Product',
+      brand: activity.brand_name || '',
+      brand_name: activity.brand_name || '',
+      category: activity.category || 'General',
+      description: activity.description || 'No description available',
+      price: activity.current_price || 0,
+      sale_price: activity.sale_price || activity.current_price || 0,
+      retail_price: activity.retail_price || activity.current_price || 0,
+      originalPrice: activity.previous_price,
+      discount_percent: activity.discount_percent || 0,
+      discount: activity.discount_percent || 0,
+      imageUrl: activity.image_url || '/placeholder-product.svg',
+      image_url: activity.image_url || '/placeholder-product.svg',
+      affiliateUrl: activity.affiliate_url || '#',
+      buy_url: activity.affiliate_url || '#',
+      merchant: 'MEC', // TODO: Get actual merchant name from merchant_id
+      merchant_name: 'MEC',
+      merchant_id: activity.merchant_id || 0,
+      deal_quality_score: 85, // Default for new sales
+      price_trend_status: 'great_price',
+      price_position_percent: 25
+    };
+    
+    console.log('🔍 Transformed Product for Modal:', product);
+    
+    setSelectedProduct(product);
+    setSelectedSaleContext(activity);
+    setIsProductModalOpen(true);
+  };
 
   const renderDashboardView = () => (
     <div className="space-y-6">
@@ -50,9 +109,6 @@ const DashboardContent = () => {
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Welcome to TCC Deal Buddy 🚀
             </h1>
-            <p className="text-gray-600 mb-4">
-              Your intelligent price tracking and deal discovery dashboard for outdoor gear
-            </p>
             {getActiveFilterCount() > 0 && (
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary" className="bg-orange-50 text-orange-700">
@@ -163,10 +219,19 @@ const DashboardContent = () => {
             ) : (
               <div className="space-y-4">
                 {activities.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div 
+                    key={activity.id} 
+                    className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+                    onClick={() => handleNewSalesClick(activity)}
+                  >
                     <div>
                       <p className="font-medium text-sm">{activity.item}</p>
                       <p className="text-xs text-gray-500">{activity.time}</p>
+                      {activity.previous_price && (
+                        <p className="text-xs text-green-600">
+                          Was ${activity.previous_price.toFixed(2)} • Now ${activity.current_price.toFixed(2)}
+                        </p>
+                      )}
                     </div>
                     <Badge 
                       variant={activity.type === 'price_drop' ? 'default' : 'secondary'}
@@ -196,24 +261,56 @@ const DashboardContent = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { category: "Climbing Gear", deals: 127, trend: "+18%" },
-                { category: "Winter Clothing", deals: 89, trend: "+12%" },
-                { category: "Hiking Boots", deals: 156, trend: "+8%" },
-                { category: "Camping Equipment", deals: 203, trend: "+15%" }
-              ].map((cat, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{cat.category}</p>
-                    <p className="text-xs text-gray-500">{cat.deals} deals</p>
+              {trendingLoading ? (
+                // Loading state
+                [1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg animate-pulse">
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-28"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16"></div>
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded w-12"></div>
                   </div>
-                  <div className="text-right">
-                    <Badge variant="secondary" className="bg-green-50 text-green-700">
-                      {cat.trend}
-                    </Badge>
-                  </div>
+                ))
+              ) : trendingError ? (
+                // Error state
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-2">Failed to load trending categories</p>
+                  <p className="text-xs text-gray-400">{trendingError}</p>
                 </div>
-              ))}
+              ) : trendingCategories.length === 0 ? (
+                // Empty state
+                <div className="text-center py-8">
+                  <TrendingUp className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500">No trending data available</p>
+                  <p className="text-xs text-gray-400">Trends will appear once there's enough data</p>
+                </div>
+              ) : (
+                // Live data
+                trendingCategories.map((cat, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">{cat.category}</p>
+                      <p className="text-xs text-gray-500">{cat.deals} deals</p>
+                      {cat.averageDiscount > 0 && (
+                        <p className="text-xs text-blue-600">Avg {cat.averageDiscount}% off</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <Badge 
+                        variant="secondary" 
+                        className={
+                          cat.trendDirection === 'up' ? 'bg-green-50 text-green-700' :
+                          cat.trendDirection === 'down' ? 'bg-red-50 text-red-700' :
+                          'bg-gray-50 text-gray-700'
+                        }
+                      >
+                        {cat.trend}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -248,25 +345,8 @@ const DashboardContent = () => {
             </CardContent>
           </Card>
         );
-      case 'favorites':
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Favorite Products</CardTitle>
-              <CardDescription>Your saved items and wishlist</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No favorites yet</h3>
-                <p className="text-gray-500 mb-4">
-                  Browse deals and save your favorite products for quick access.
-                </p>
-                <Button onClick={() => setActiveView('deals')}>Browse Deals</Button>
-              </div>
-            </CardContent>
-          </Card>
-        );
+      case 'cart':
+        return <CartPage />;
       case 'trending':
         return (
           <Card>
@@ -291,40 +371,54 @@ const DashboardContent = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Desktop Layout */}
-      <div className="hidden md:flex min-h-screen">
+    <SidebarProvider defaultOpen={false}>
+      {/* Mobile Header - Only visible on mobile/tablet */}
+      {isMobile && (
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 lg:hidden">
+          <div className="flex items-center justify-between p-4">
+            <SidebarTrigger />
+            <h1 className="text-lg font-semibold text-gray-900">TCC Deal Buddy</h1>
+            <div className="w-8" /> {/* Spacer for centering */}
+          </div>
+        </header>
+      )}
+
+      <div className="min-h-screen flex w-full">
         <AppSidebar 
           activeView={activeView}
           onViewChange={setActiveView}
         />
-        <main className="flex-1 overflow-auto bg-gray-50">
-          <div className="p-6 min-h-screen">
-            {renderMainContent()}
-          </div>
-        </main>
+        <SidebarInset className="flex-1">
+          <main className="flex-1 overflow-auto bg-gray-50">
+            <div className={`p-6 min-h-screen ${isMobile ? 'pt-20' : ''}`}>
+              {renderMainContent()}
+            </div>
+          </main>
+        </SidebarInset>
       </div>
       
-      {/* Mobile Layout */}
-      <div className="md:hidden min-h-screen bg-gray-50">
-        <AppSidebar 
-          activeView={activeView}
-          onViewChange={setActiveView}
-        />
-        <main className="w-full">
-          <div className="p-4 pt-20 min-h-screen">
-            {renderMainContent()}
-          </div>
-        </main>
-      </div>
-    </div>
+      {/* Product Modal */}
+      <ProductModal
+        product={selectedProduct}
+        isOpen={isProductModalOpen}
+        saleContext={selectedSaleContext}
+        onClose={() => {
+          setIsProductModalOpen(false);
+          setSelectedProduct(null);
+          setSelectedSaleContext(null);
+        }}
+      />
+    </SidebarProvider>
   );
 };
 
 const Index = () => {
   return (
     <FilterProvider>
-      <DashboardContent />
+      <CartProvider>
+        <DashboardContent />
+        <CartFooter />
+      </CartProvider>
     </FilterProvider>
   );
 };

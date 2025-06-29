@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TCC Deal Buddy Loading</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        #testResults { margin-top: 20px; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 TCC Deal Buddy Loading Test</h1>
+        <p>This page helps diagnose if the TCC Deal Buddy application is loading correctly.</p>
+        
+        <div class="status loading">
+            <strong>Status:</strong> Testing application loading...
+        </div>
+        
+        <button onclick="testMainApp()">Test Main App (Port 8081)</button>
+        <button onclick="testDevServer()">Check Dev Server Status</button>
+        <button onclick="testConsoleErrors()">Test Console Errors</button>
+        
+        <div id="testResults"></div>
+        
+        <h2>Common Issues & Solutions:</h2>
+        <ul>
+            <li><strong>White Screen:</strong> Usually caused by JavaScript errors, missing imports, or build issues</li>
+            <li><strong>Import Errors:</strong> Check file paths, especially relative imports</li>
+            <li><strong>TypeScript Errors:</strong> Run <code>npm run build</code> to check for compilation errors</li>
+            <li><strong>Component Errors:</strong> Check browser console for React component errors</li>
+        </ul>
+        
+        <h3>Manual Checks:</h3>
+        <ol>
+            <li>Open browser developer tools (F12)</li>
+            <li>Check Console tab for JavaScript errors</li>
+            <li>Check Network tab for failed resource loads</li>
+            <li>Try refreshing the page (Ctrl+F5)</li>
+        </ol>
+        
+        <p><strong>Main App URL:</strong> <a href="http://localhost:8081" target="_blank">http://localhost:8081</a></p>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('testResults');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function testMainApp() {
+            addResult('🔄 Testing main application...', 'loading');
+            
+            fetch('http://localhost:8081')
+                .then(response => {
+                    if (response.ok) {
+                        addResult('✅ Main app server is responding (Status: ' + response.status + ')', 'success');
+                        return response.text();
+                    } else {
+                        throw new Error('Server responded with status: ' + response.status);
+                    }
+                })
+                .then(html => {
+                    if (html.includes('<div id="root">')) {
+                        addResult('✅ HTML structure looks correct (found root div)', 'success');
+                    } else {
+                        addResult('⚠️ HTML structure might be missing root div', 'error');
+                    }
+                })
+                .catch(error => {
+                    addResult('❌ Failed to connect to main app: ' + error.message, 'error');
+                });
+        }
+
+        function testDevServer() {
+            addResult('🔄 Checking development server...', 'loading');
+            
+            // Test if Vite dev server is running
+            fetch('http://localhost:8081/@vite/client')
+                .then(response => {
+                    if (response.ok) {
+                        addResult('✅ Vite dev server is running correctly', 'success');
+                    } else {
+                        addResult('⚠️ Vite dev server might have issues', 'error');
+                    }
+                })
+                .catch(error => {
+                    addResult('❌ Vite dev server check failed: ' + error.message, 'error');
+                });
+        }
+
+        function testConsoleErrors() {
+            addResult('🔄 Monitoring console errors...', 'loading');
+            
+            // Override console.error to catch errors
+            const originalError = console.error;
+            const errors = [];
+            
+            console.error = function(...args) {
+                errors.push(args.join(' '));
+                originalError.apply(console, args);
+            };
+            
+            setTimeout(() => {
+                console.error = originalError;
+                if (errors.length === 0) {
+                    addResult('✅ No console errors detected', 'success');
+                } else {
+                    addResult('❌ Console errors found: ' + errors.join(', '), 'error');
+                }
+            }, 2000);
+        }
+        
+        // Auto-run basic test on page load
+        setTimeout(testMainApp, 1000);
+    </script>
+</body>
+</html>

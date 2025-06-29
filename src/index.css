@@ -101,3 +101,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Image quality improvements */
+  .image-crisp {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  
+  /* Better image scaling for high-DPI displays */
+  .image-quality {
+    image-rendering: auto;
+    image-rendering: -webkit-optimize-contrast;
+  }
+}

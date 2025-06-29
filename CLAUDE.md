@@ -2,42 +2,28 @@
 
 ## 🎨 UI Editing Workflow
 
-**NEW: Lovable-like Visual Editing System**
-This project now has a comprehensive UI editing workflow with visual validation:
+**SIMPLIFIED: Component Mapping System**
+This project uses a streamlined UI editing workflow with component mapping:
 
 **Files:**
-- `CLAUDE_UI_MAP.md` - Complete component mapping with file:line locations (project-specific)
-- `ui-editor-config.json` - Screenshot targets and dev server config (project-specific)
-- `/mnt/ssd/Projects/claude/tools/ui-editor/` - Global UI editing tools (reusable)
+- `CLAUDE_UI_MAP.md` - Complete component mapping with file:line locations (auto-generated)
+- `/mnt/ssd/Projects/claude/tools/ui-editor/` - Global UI editing tools (simplified)
 
 **Workflow Commands:**
 ```bash
-# Visual editing workflow (uses global UI editor tools)
-node /mnt/ssd/Projects/claude/tools/ui-editor/screenshot-workflow.cjs . before    # Capture current state
-# Make UI edits using CLAUDE_UI_MAP.md
-node /mnt/ssd/Projects/claude/tools/ui-editor/screenshot-workflow.cjs . after     # Capture updated state  
-node /mnt/ssd/Projects/claude/tools/ui-editor/screenshot-workflow.cjs . compare   # Validate changes
-node /mnt/ssd/Projects/claude/tools/ui-editor/screenshot-workflow.cjs . reset     # Start fresh
-
-# Manual screenshots (project-specific)
-node screenshot.cjs                     # Full page
-node screenshot.cjs --mobile           # Mobile view
-node screenshot.cjs --element ".card"   # Specific elements
-
-# Convenient npm scripts:
-npm run ui:before                       # Alias for before command
-npm run ui:after                        # Alias for after command  
-npm run ui:compare                      # Alias for compare command
+# Simplified workflow (uses component mapping)
+npm run ui:setup        # One-time project setup
+npm run ui:update-map   # Generate/update component mapping
 ```
 
 **How it works:**
-1. Claude captures before screenshots automatically
-2. Uses CLAUDE_UI_MAP.md to locate exact components (no searching!)
-3. Makes precise edits with file:line targeting
-4. Captures after screenshots for validation
-5. Compares before/after to confirm changes worked
+1. Generate component map for precise targeting
+2. Use CLAUDE_UI_MAP.md to locate exact components (no searching!)
+3. Make precise edits with file:line targeting
+4. Verify changes with live dev server preview
+5. Update component map after major changes
 
-This achieves Lovable-like precision through systematic visual validation.
+This achieves precision through intelligent component mapping and live development feedback.
 
 ## Supabase Setup
 

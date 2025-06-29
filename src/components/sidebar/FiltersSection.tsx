@@ -5,8 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Sliders, ChevronDown, ChevronUp, Grid3X3, List } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useSidebar } from '@/components/ui/aceternity-sidebar';
+import { useSidebar } from '@/components/ui/sidebar';
 import { FilterSectionProps } from './types';
 
 export const FiltersSection: React.FC<FilterSectionProps> = ({
@@ -21,7 +20,7 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
   onSortByChange,
   onViewModeChange
 }) => {
-  const { open, isMobile, setInteracting } = useSidebar();
+  const { state, isMobile, setInteracting } = useSidebar();
   const [expanded, setExpanded] = useState(false);
 
   const handleSelectOpenChange = (isOpen: boolean) => {
@@ -34,6 +33,11 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
     }
   };
 
+  // Hide entire section when sidebar is collapsed
+  if (state === "collapsed" && !isMobile) {
+    return null;
+  }
+
   return (
     <div className="space-y-2">
       <Button
@@ -43,31 +47,15 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
       >
         <div className="flex items-center gap-2">
           <Sliders className="h-4 w-4" />
-          <motion.span
-            animate={{
-              opacity: (open || isMobile) ? 1 : 0,
-              display: (open || isMobile) ? "inline" : "none",
-            }}
-          >
-            Filters
-          </motion.span>
+          <span>Filters</span>
         </div>
-        <motion.div
-          animate={{
-            opacity: (open || isMobile) ? 1 : 0,
-            display: (open || isMobile) ? "block" : "none",
-          }}
-        >
+        <div>
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </motion.div>
+        </div>
       </Button>
       
-      {expanded && (open || isMobile) && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="overflow-hidden px-2"
+      {expanded && (state === "expanded" || isMobile) && (
+        <div className="overflow-hidden px-2"
         >
           <div className="space-y-4">
             {/* Category Dropdown */}
@@ -195,7 +183,7 @@ export const FiltersSection: React.FC<FilterSectionProps> = ({
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

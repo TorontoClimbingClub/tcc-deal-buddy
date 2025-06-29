@@ -1,10 +1,10 @@
 
 import React, { useState, useCallback } from 'react';
-import { Bell, TrendingDown, TrendingUp, Target, Star, Heart } from 'lucide-react';
+import { Bell, TrendingDown, TrendingUp, Target, Star, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PriceAlertModal } from './PriceAlertModal';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useGlobalCart } from '@/contexts/CartContext';
 import { usePriceIntelligence } from '@/hooks/usePriceIntelligence';
 
 export interface Product {
@@ -51,7 +51,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
   showPriceIntelligence = false,
   viewMode = 'grid'
 }) => {
-  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
+  const { addToCart, isInCart, getCartItemQuantity } = useGlobalCart();
   const { getProductPriceRecommendations } = usePriceIntelligence();
   const [recommendation, setRecommendation] = useState<unknown>(null);
 
@@ -64,23 +64,20 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
   const brandName = product.brand_name || product.brand;
   const discountPercent = product.discount_percent || product.discount;
   const isOnSale = originalPrice && currentPrice < originalPrice;
-  const isFav = product.sku && product.merchant_id ? isFavorite(product.sku, product.merchant_id) : false;
+  const isInCartStatus = product.sku && product.merchant_id ? isInCart(product.sku, product.merchant_id) : false;
+  const cartQuantity = product.sku && product.merchant_id ? getCartItemQuantity(product.sku, product.merchant_id) : 0;
 
   const handleAffiliateClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     window.open(buyUrl, '_blank', 'noopener,noreferrer');
   }, [buyUrl]);
 
-  const handleFavoriteToggle = useCallback(async (e: React.MouseEvent) => {
+  const handleAddToCart = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!product.sku || !product.merchant_id) return;
 
-    if (isFav) {
-      await removeFromFavorites(product.sku, product.merchant_id);
-    } else {
-      await addToFavorites(product.sku, product.merchant_id);
-    }
-  }, [product.sku, product.merchant_id, isFav, addToFavorites, removeFromFavorites]);
+    await addToCart(product.sku, product.merchant_id);
+  }, [product.sku, product.merchant_id, addToCart]);
 
   const loadPriceRecommendation = useCallback(async () => {
     if (product.sku && product.merchant_id && !recommendation) {
@@ -166,7 +163,8 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
             <img
               src={imageUrl}
               alt={product.name}
-              className="w-24 h-24 object-cover bg-gray-100 rounded-lg"
+              className="w-16 h-16 object-cover bg-gray-100 rounded-lg image-crisp"
+              loading="lazy"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src = '/placeholder-product.svg';
@@ -228,11 +226,15 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={handleFavoriteToggle}
+                      onClick={handleAddToCart}
+                      className={isInCartStatus ? 'bg-green-50 border-green-200' : ''}
                     >
-                      <Heart 
-                        className={`h-4 w-4 ${isFav ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} 
+                      <ShoppingCart 
+                        className={`h-4 w-4 ${isInCartStatus ? 'text-green-600' : 'text-gray-500'}`} 
                       />
+                      {cartQuantity > 0 && (
+                        <span className="ml-1 text-xs font-medium">{cartQuantity}</span>
+                      )}
                     </Button>
 
                     <PriceAlertModal
@@ -266,11 +268,12 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
   // Grid view (default)
   return (
     <div className="group cursor-pointer bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-      <div className="relative mb-4" onClick={() => onViewDetails(product)}>
+      <div className="relative mb-3" onClick={() => onViewDetails(product)}>
         <img
           src={imageUrl}
           alt={product.name}
-          className="w-full h-48 object-cover bg-gray-100 rounded-t-lg"
+          className="w-full h-32 object-cover bg-gray-100 rounded-t-lg image-crisp"
+          loading="lazy"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.src = '/placeholder-product.svg';
@@ -288,19 +291,24 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
         </div>
 
         {/* Top right actions */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2">
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
           {product.sku && product.merchant_id && (
             <>
               <Button
                 size="sm"
                 variant="outline"
-                className="p-2 bg-white/90 hover:bg-white"
-                onClick={handleFavoriteToggle}
+                className={`p-1 bg-white/90 hover:bg-white h-6 w-6 ${isInCartStatus ? 'bg-green-50 border-green-200' : ''}`}
+                onClick={handleAddToCart}
               >
-                <Heart 
-                  className={`h-4 w-4 ${isFav ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} 
+                <ShoppingCart 
+                  className={`h-3 w-3 ${isInCartStatus ? 'text-green-600' : 'text-gray-500'}`} 
                 />
               </Button>
+              {cartQuantity > 0 && (
+                <div className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {cartQuantity}
+                </div>
+              )}
 
               <PriceAlertModal
                 productSku={product.sku}
@@ -311,9 +319,9 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="p-2 bg-white/90 hover:bg-white"
+                  className="p-1 bg-white/90 hover:bg-white h-6 w-6"
                 >
-                  <Bell className="h-4 w-4 text-gray-500" />
+                  <Bell className="h-3 w-3 text-gray-500" />
                 </Button>
               </PriceAlertModal>
             </>
@@ -321,9 +329,9 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
         </div>
       </div>
       
-      <div className="p-4">
+      <div className="p-3">
         {/* Brand and merchant */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-1">
           {brandName && (
             <span className="text-xs text-gray-500 uppercase tracking-wide">
               {brandName}
@@ -333,7 +341,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
         </div>
 
         {/* Product name */}
-        <div className="mb-3">
+        <div className="mb-2">
           <h3 className="text-gray-900 font-medium group-hover:text-gray-700 transition-colors text-sm overflow-hidden line-clamp-2">
             {product.name}
           </h3>
@@ -341,7 +349,7 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
 
         {/* Price intelligence info */}
         {showPriceIntelligence && (
-          <div className="mb-3 space-y-1">
+          <div className="mb-2 space-y-1">
             <DealQualityIndicator />
             
             {product.price_position_percent && (
@@ -374,9 +382,9 @@ const ProductCard: React.FC<ProductCardProps> = React.memo(({
           <Button 
             onClick={handleAffiliateClick}
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 text-xs px-2"
           >
-            Buy Now
+            Buy
           </Button>
         </div>
       </div>

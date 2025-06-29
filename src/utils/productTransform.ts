@@ -79,20 +79,39 @@ export function transformAvantLinkProduct(avantLinkProduct: any): Product {
                      'No description available';
 
   // Choose the best image available from sanitized data and validate URL
-  let imageUrl = sanitized['Medium Image'] || 
-                 sanitized.strMediumImage ||
-                 sanitized['Large Image'] || 
+  // Prioritize Large images first for best quality
+  let imageUrl = sanitized['Large Image'] || 
                  sanitized.strLargeImage ||
+                 sanitized['Medium Image'] || 
+                 sanitized.strMediumImage ||
                  sanitized['Thumbnail Image'] || 
                  sanitized.strThumbnailImage ||
                  '/placeholder-product.svg';
 
-  // Validate image URL for security
+  // Validate image URL for security and quality
   if (imageUrl && imageUrl !== '/placeholder-product.svg') {
     try {
       const url = new URL(imageUrl);
       if (!['http:', 'https:'].includes(url.protocol)) {
         imageUrl = '/placeholder-product.svg';
+      } else {
+        // Ensure HTTPS for better security and quality
+        if (url.protocol === 'http:') {
+          url.protocol = 'https:';
+          imageUrl = url.toString();
+        }
+        
+        // Validate image format
+        const validImageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+        const hasValidExtension = validImageExtensions.some(ext => 
+          url.pathname.toLowerCase().includes(ext)
+        );
+        
+        // If no valid extension found, still allow (many CDNs don't show extensions)
+        // but ensure the URL looks reasonable
+        if (url.pathname === '/' || url.pathname === '') {
+          imageUrl = '/placeholder-product.svg';
+        }
       }
     } catch {
       imageUrl = '/placeholder-product.svg';

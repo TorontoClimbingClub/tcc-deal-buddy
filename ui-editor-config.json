@@ -1,5 +1,5 @@
 {
-  "url": "http://192.168.231.238:8080",
+  "url": "http://172.26.24.166:8080/#all-products",
   "projectName": "tcc-deal-buddy",
   "elements": [],
   "timeout": 10000,

@@ -1,5 +1,9 @@
 import React from 'react';
-import { SidebarLink } from '@/components/ui/aceternity-sidebar';
+import { 
+  SidebarMenu, 
+  SidebarMenuItem, 
+  SidebarMenuButton 
+} from '@/components/ui/sidebar';
 import { MenuItem } from './types';
 
 interface NavigationSectionProps {
@@ -14,31 +18,34 @@ export const NavigationSection: React.FC<NavigationSectionProps> = ({
   onViewChange
 }) => {
   return (
-    <div className="flex flex-col gap-2">
+    <SidebarMenu>
       {menuItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeView === item.id;
         
         return (
-          <SidebarLink
-            key={item.id}
-            link={{
-              label: item.label,
-              href: `#${item.id}`,
-              icon: (
-                <Icon className={`h-5 w-5 ${
-                  isActive ? 'text-blue-600' : 'text-gray-600 group-hover/sidebar:text-blue-600'
-                }`} />
-              )
-            }}
-            className={`${isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'} rounded-lg px-2`}
-            onClick={(e) => {
-              e.preventDefault();
-              onViewChange(item.id);
-            }}
-          />
+          <SidebarMenuItem key={item.id}>
+            <SidebarMenuButton
+              asChild
+              isActive={isActive}
+              tooltip={item.label}
+              className="w-full justify-start"
+            >
+              <a
+                href={`#${item.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onViewChange(item.id);
+                }}
+                className="flex items-center gap-2 w-full"
+              >
+                <Icon className="h-5 w-5" />
+                <span>{item.label}</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         );
       })}
-    </div>
+    </SidebarMenu>
   );
 };

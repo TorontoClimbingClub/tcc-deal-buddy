@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,8 @@ import { AllProductsPage } from '../components/AllProductsPage';
 import { CartPage } from '../components/CartPage';
 import { CartFooter } from '../components/CartFooter';
 import { AppSidebar } from '../components/sidebar';
+import { PhoneLoginForm } from '../components/PhoneLoginForm';
+import { UserProfile } from '../components/UserProfile';
 import ProductModal from '../components/ProductModal';
 import { Product } from '../components/ProductCard';
 import { usePriceAlerts } from '../hooks/usePriceAlerts';
@@ -17,9 +18,9 @@ import { useNewSales, NewSales } from '../hooks/useNewSales';
 import { useTrendingCategories } from '../hooks/useTrendingCategories';
 import { FilterProvider, useGlobalFilters } from '../contexts/FilterContext';
 import { CartProvider } from '../contexts/CartContext';
+import { usePhoneAuth } from '../contexts/PhoneAuthContext';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-
 
 const DashboardContent = () => {
   const [activeView, setActiveView] = useState('dashboard');
@@ -28,6 +29,8 @@ const DashboardContent = () => {
   const [selectedSaleContext, setSelectedSaleContext] = useState<NewSales | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const isMobile = useIsMobile();
+  
+  const { user, isLoading } = usePhoneAuth();
   
   // Handle hash changes for navigation
   useEffect(() => {
@@ -48,6 +51,7 @@ const DashboardContent = () => {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
   const { getAlertStats } = usePriceAlerts();
   const alertStats = getAlertStats();
   const dashboardStats = useDashboardStats();
@@ -55,6 +59,23 @@ const DashboardContent = () => {
   const { activities, loading: activitiesLoading, error: activitiesError } = useNewSales();
   const { trendingCategories, loading: trendingLoading, error: trendingError } = useTrendingCategories();
   const { filters, getActiveFilterCount, isFilterActive } = useGlobalFilters();
+
+  // Show loading screen while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login form if not authenticated
+  if (!user) {
+    return <PhoneLoginForm />;
+  }
 
   // Handle New Sales item click
   const handleNewSalesClick = (activity: NewSales) => {
@@ -102,13 +123,16 @@ const DashboardContent = () => {
 
   const renderDashboardView = () => (
     <div className="space-y-6">
-      {/* Welcome Header */}
+      {/* Welcome Header with User Info */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Welcome to TCC Deal Buddy 🚀
             </h1>
+            <p className="text-gray-600 mb-2">
+              Hello, {user.display_name}! ({user.phone_number.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')})
+            </p>
             {getActiveFilterCount() > 0 && (
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary" className="bg-orange-50 text-orange-700">
@@ -117,6 +141,9 @@ const DashboardContent = () => {
                 </Badge>
               </div>
             )}
+          </div>
+          <div className="hidden lg:block">
+            <UserProfile />
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { applyDealFilters } from '../utils/dealFilters';
+import { DEAL_FILTERS, getDealDateFilter } from '../utils/dealFilters';
 
 interface DashboardStats {
   activeDeals: number;
@@ -25,12 +25,16 @@ export const useDashboardStats = (): DashboardStats => {
       try {
         setStats(prev => ({ ...prev, loading: true, error: null }));
 
-        // Get current deals count using unified filters
-        const dealsQuery = supabase
+        // Get current deals count with direct filters (avoiding the problematic applyDealFilters)
+        const { count: dealsCount, error: dealsError } = await supabase
           .from('current_deals')
-          .select('*', { count: 'exact', head: true });
-
-        const { count: dealsCount, error: dealsError } = await applyDealFilters(dealsQuery);
+          .select('*', { count: 'exact', head: true })
+          .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID)
+          .gte('last_sync_date', getDealDateFilter())
+          .not('sale_price', 'is', null)
+          .not('retail_price', 'is', null)
+          .gt('sale_price', 0)
+          .gt('retail_price', 0);
 
         if (dealsError) {
           console.error('Error fetching deals count:', dealsError);
@@ -40,20 +44,24 @@ export const useDashboardStats = (): DashboardStats => {
         const { count: productsCount, error: productsError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true })
-          .eq('merchant_id', 18557);
+          .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID);
 
         if (productsError) {
           console.error('Error fetching products count:', productsError);
         }
 
-        // Get average discount from current deals using unified filters
-        const avgDiscountQuery = supabase
+        // Get average discount from current deals with direct filters
+        const { data: avgDiscountData, error: avgError } = await supabase
           .from('current_deals')
           .select('calculated_discount_percent')
+          .eq('merchant_id', DEAL_FILTERS.MERCHANT_ID)
+          .gte('last_sync_date', getDealDateFilter())
+          .not('sale_price', 'is', null)
+          .not('retail_price', 'is', null)
+          .gt('sale_price', 0)
+          .gt('retail_price', 0)
           .not('calculated_discount_percent', 'is', null)
           .gt('calculated_discount_percent', 0);
-
-        const { data: avgDiscountData, error: avgError } = await applyDealFilters(avgDiscountQuery);
 
         if (avgError) {
           console.error('Error fetching average discount:', avgError);

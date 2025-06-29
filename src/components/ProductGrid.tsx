@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import ProductCard, { Product } from './ProductCard';
 import ProductModal from './ProductModal';
@@ -89,8 +90,6 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
     getCurrentDeals();
   }, [getCurrentDeals]);
 
-  // Debug removed to prevent resource exhaustion
-
   // Memoize pagination page numbers for performance
   const paginationNumbers = useMemo(() => {
     const maxVisible = 5;
@@ -116,8 +115,6 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
     
     return pages;
   }, [currentPage, totalPages]);
-
-
 
   return (
     <div className="space-y-6">
@@ -212,7 +209,6 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
         </Card>
       </div>
 
-
       {/* Results Header and View Toggle */}
       <div className="flex items-center justify-between">
         <div>
@@ -306,7 +302,7 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious 
-                      onClick={() => currentPage > 1 && getCurrentDeals(currentPage - 1)}
+                      onClick={() => currentPage > 1 && getCurrentDeals()}
                       className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                     />
                   </PaginationItem>
@@ -315,7 +311,7 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
                   {paginationNumbers.map((pageNumber) => (
                     <PaginationItem key={pageNumber}>
                       <PaginationLink
-                        onClick={() => getCurrentDeals(pageNumber)}
+                        onClick={() => getCurrentDeals()}
                         isActive={currentPage === pageNumber}
                         className="cursor-pointer"
                       >
@@ -332,7 +328,7 @@ const ProductGrid: React.FC<ProductGridProps> = React.memo(({ showPriceIntellige
                   
                   <PaginationItem>
                     <PaginationNext 
-                      onClick={() => currentPage < totalPages && getCurrentDeals(currentPage + 1)}
+                      onClick={() => currentPage < totalPages && getCurrentDeals()}
                       className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                     />
                   </PaginationItem>
